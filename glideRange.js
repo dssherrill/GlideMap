@@ -15,6 +15,17 @@
 
 /*jshint esversion: 6 */
 
+// Validation constants - keep in sync with HTML input attributes
+const GLIDE_RATIO_MIN = 1;
+const GLIDE_RATIO_MAX = 100;
+const GLIDE_RATIO_DEFAULT = 20;
+const ALTITUDE_MIN = 0;
+const ALTITUDE_MAX = 50000;
+const ALTITUDE_DEFAULT = 3500;
+const ARRIVAL_HEIGHT_MIN = 0;
+const ARRIVAL_HEIGHT_MAX = 10000;
+const ARRIVAL_HEIGHT_DEFAULT = 1000;
+
 // Clear stored entries on reset request
 const paramsString = window.location.search;
 let searchParams = new URLSearchParams(paramsString);
@@ -67,20 +78,21 @@ function validateInput(value, min, max, defaultValue) {
 function getGlideParams() {
     let glideRatio = validateInput(
         document.getElementById('glideRatioInput').value,
-        1, 100, 20
+        GLIDE_RATIO_MIN, GLIDE_RATIO_MAX, GLIDE_RATIO_DEFAULT
     );
     let altitude = validateInput(
         document.getElementById('altitudeInput').value,
-        0, 50000, 3500
+        ALTITUDE_MIN, ALTITUDE_MAX, ALTITUDE_DEFAULT
     );
     let arrivalHeight = validateInput(
         document.getElementById('arrivalHeightInput').value,
-        0, 10000, 1000
+        ARRIVAL_HEIGHT_MIN, ARRIVAL_HEIGHT_MAX, ARRIVAL_HEIGHT_DEFAULT
     );
 
     // Ensure arrival height is less than altitude
     if (arrivalHeight >= altitude) {
-        arrivalHeight = Math.max(0, altitude - 100);
+        // Use proportional approach for low altitudes
+        arrivalHeight = Math.max(0, Math.min(altitude * 0.9, altitude - 100));
     }
 
     return new GlideParams(glideRatio, altitude, arrivalHeight);
@@ -345,7 +357,7 @@ function loadCupFile(e) {
     // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024;
     if (input.size > maxSize) {
-        console.error('File too large. Maximum size is 5MB');
+        console.error('File too large. Maximum allowed size is 5MB');
         alert('File is too large. Please select a file smaller than 5MB.');
         return;
     }
