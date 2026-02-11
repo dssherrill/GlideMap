@@ -4,7 +4,7 @@ A web-based glider range calculator that visualizes reachable landing spots on a
 
 ## Overview
 
-GlideMap is a tool designed for glider pilots to visualize their glide range on a map. It reads CUP (Cambridge University Press) format files containing waypoint data and displays circles around each landing spot representing the reachable area based on configurable flight parameters.
+GlideMap is a tool designed for glider pilots to visualize their glide range on a map. It reads CUP (SeeYou) format waypoint files and displays circles around each landing spot representing the reachable area based on configurable flight parameters.
 
 ## Features
 
@@ -44,7 +44,7 @@ radius = glideRatio × (altitude - arrivalHeight - fieldElevation)
 
 ## File Format
 
-GlideMap supports CUP format files, which are CSV files with specific columns for waypoint data including:
+GlideMap supports CUP (SeeYou) format waypoint files, which are CSV files with specific columns for waypoint data including:
 - Name
 - Coordinates (latitude/longitude in degrees and decimal minutes)
 - Elevation (in feet or meters)
