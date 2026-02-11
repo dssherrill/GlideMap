@@ -15,7 +15,7 @@
         L.control.scale().addTo(map);
 
         // Control 3: This add a Search bar
-        const searchControl = L.esri.Geocoding.geosearch().addTo(map);
+        const searchControl = new L.esri.Controls.Geosearch().addTo(map);
 
         const results = new L.LayerGroup().addTo(map);
 

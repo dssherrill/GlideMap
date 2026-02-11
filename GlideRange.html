@@ -11,7 +11,8 @@
           - Standardized variable declarations (var → const/let)
           - Added comprehensive input validation and error handling
           - Added accessibility improvements (ARIA labels)
-          - Updated all dependencies to latest stable versions
+          - Updated Leaflet and jQuery to latest stable versions
+          - Kept ESRI Leaflet at beta version for API compatibility
           - Added package.json for dependency management
           - Removed console.log statements from production code
           - Added file size and format validation
@@ -41,11 +42,13 @@
         crossorigin=""></script>
 
     <!-- CSS and JS files for Search Box -->
-    <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
+    <script src="https://cdn-geoweb.s3.amazonaws.com/esri-leaflet/0.0.1-beta.5/esri-leaflet.js"></script>
 
-    <script src="https://unpkg.com/esri-leaflet-geocoder@3.1.4/dist/esri-leaflet-geocoder.js"></script>
+    <script
+        src="https://cdn-geoweb.s3.amazonaws.com/esri-leaflet-geocoder/0.0.1-beta.5/esri-leaflet-geocoder.js"></script>
 
-    <link rel="stylesheet" href="https://unpkg.com/esri-leaflet-geocoder@3.1.4/dist/esri-leaflet-geocoder.css">
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn-geoweb.s3.amazonaws.com/esri-leaflet-geocoder/0.0.1-beta.5/esri-leaflet-geocoder.css">
 
     <style>
         html,

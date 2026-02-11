@@ -26,8 +26,8 @@
   "homepage": "https://github.com/dssherrill/GlideMap#readme",
   "dependencies": {
     "leaflet": "^1.9.4",
-    "esri-leaflet": "^3.0.12",
-    "esri-leaflet-geocoder": "^3.1.4",
+    "esri-leaflet": "0.0.1-beta.5",
+    "esri-leaflet-geocoder": "0.0.1-beta.5",
     "jquery": "^3.7.1",
     "lodash": "^4.17.21"
   },

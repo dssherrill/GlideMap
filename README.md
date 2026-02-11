@@ -66,8 +66,8 @@ GlideMap requires a modern web browser with JavaScript enabled. It has been test
 - [Leaflet.js](https://leafletjs.com/) v1.9.4 - Interactive map library
 - [jQuery](https://jquery.com/) v3.7.1 - JavaScript library
 - [jQuery CSV](https://github.com/typeiii/jquery-csv) - CSV parsing
-- [ESRI Leaflet](https://github.com/Esri/esri-leaflet) v3.0.12 - Geocoding and search
-- [ESRI Leaflet Geocoder](https://github.com/Esri/esri-leaflet-geocoder) v3.1.4 - Geocoding control
+- [ESRI Leaflet](https://github.com/Esri/esri-leaflet) v0.0.1-beta.5 - Geocoding and search (using beta for compatibility)
+- [ESRI Leaflet Geocoder](https://github.com/Esri/esri-leaflet-geocoder) v0.0.1-beta.5 - Geocoding control
 - [Lodash](https://lodash.com/) v4.17.21 - Utility library
 - [Mapbox](https://www.mapbox.com/) - Map tiles
 
@@ -96,8 +96,7 @@ GlideMap requires a modern web browser with JavaScript enabled. It has been test
 - **Dependency Updates**:
   - Updated Leaflet to v1.9.4 (from 1.7.1)
   - Updated jQuery to v3.7.1 (from 3.3.1)
-  - Updated ESRI Leaflet to v3.0.12 (from beta 0.0.1-beta.5)
-  - Updated ESRI Leaflet Geocoder to v3.1.4
+  - Kept ESRI Leaflet at v0.0.1-beta.5 for API compatibility
   - Updated Lodash to v4.17.21 (from 4.12.0)
 - **Project Structure**:
   - Added package.json for dependency tracking
