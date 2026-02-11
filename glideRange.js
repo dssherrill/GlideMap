@@ -1,7 +1,7 @@
-        const sterling = L.latLng(42.426, -71.793);
-        const map = L.map('map').setView(sterling, 8);
+        var sterling = L.latLng(42.426, -71.793);
+        var map = L.map('map').setView(sterling, 8);
 
-        const tiles = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+        var tiles = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
             maxZoom: 18,
             attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
                 'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
@@ -15,13 +15,13 @@
         L.control.scale().addTo(map);
 
         // Control 3: This add a Search bar
-        const searchControl = new L.esri.Controls.Geosearch().addTo(map);
+        var searchControl = new L.esri.Controls.Geosearch().addTo(map);
 
-        const results = new L.LayerGroup().addTo(map);
+        var results = new L.LayerGroup().addTo(map);
 
         searchControl.on('results', function (data) {
             results.clearLayers();
-            for (let i = data.results.length - 1; i >= 0; i--) {
+            for (var i = data.results.length - 1; i >= 0; i--) {
                 results.addLayer(L.marker(data.results[i].latlng));
             }
         });
@@ -31,29 +31,22 @@
         let altitude = parseFloat(document.getElementById('altitudeInput').value);
         let arrivalHeight = parseFloat(document.getElementById('arrivalHeightInput').value);
 
+        // function onMapClick(e) {
+        // 	L.popup()
+        // 		.setLatLng(e.latlng)
+        // 		.setContent(e.latlng.toString())
+        // 		.openOn(map);
+        // }
+
+        function buttonUpdateClick(e) {
+            drawLandingSpots();
+        }
+
         // Updates the radius of the circle for every landing spot using the parameters read from the form
         function drawLandingSpots(e) {
             let glideRatio = parseFloat(document.getElementById('glideRatioInput').value);
             let altitude = parseFloat(document.getElementById('altitudeInput').value);
             let arrivalHeight = parseFloat(document.getElementById('arrivalHeightInput').value);
-
-            // Validate inputs
-            if (isNaN(glideRatio) || glideRatio <= 0 || glideRatio > 100) {
-                showError('Glide ratio must be between 1 and 100');
-                return;
-            }
-            if (isNaN(altitude) || altitude < 0 || altitude > 50000) {
-                showError('Altitude must be between 0 and 50,000 feet');
-                return;
-            }
-            if (isNaN(arrivalHeight) || arrivalHeight < 0 || arrivalHeight > 10000) {
-                showError('Arrival height must be between 0 and 10,000 feet');
-                return;
-            }
-            if (arrivalHeight >= altitude) {
-                showError('Arrival height must be less than altitude');
-                return;
-            }
 
             let inputElements = document.getElementsByClassName('messageCheckbox');
             let airport = inputElements[0].checked;
@@ -63,7 +56,7 @@
             for (let a of landingSpots) {
                 a.circle.removeFrom(map);
 
-                let radius = glideRatio * (altitude - arrivalHeight - a.elevation);
+                radius = glideRatio * (altitude - arrivalHeight - a.elevation);
                 radius = Math.max(1.0, radius);
                 a.circle.setRadius(feetToMeters(radius));
 
@@ -83,30 +76,6 @@
 
         function metersToFeet(meters) {
             return meters / 0.3048;
-        }
-
-        // Display error message to user
-        function showError(message) {
-            const statusElement = document.getElementById('fileStatus');
-            if (statusElement) {
-                statusElement.textContent = '❌ Error: ' + message;
-                statusElement.style.color = 'red';
-                setTimeout(() => {
-                    statusElement.textContent = '';
-                }, 5000);
-            }
-        }
-
-        // Display success message to user
-        function showSuccess(message) {
-            const statusElement = document.getElementById('fileStatus');
-            if (statusElement) {
-                statusElement.textContent = '✓ ' + message;
-                statusElement.style.color = 'green';
-                setTimeout(() => {
-                    statusElement.textContent = '';
-                }, 3000);
-            }
         }
 
         // map.on('click', onMapClick);
@@ -135,138 +104,57 @@
             arrivalHeight = parseFloat(document.getElementById('arrivalHeightInput').value);
 
             const input = csvFile.files[0];
-            
-            // Validate file is selected
-            if (!input) {
-                showError('Please select a CUP file');
-                return;
-            }
-
-            // Validate file size (max 5MB)
-            const maxSize = 5 * 1024 * 1024; // 5MB
-            if (input.size > maxSize) {
-                showError('File is too large. Maximum size is 5MB');
-                return;
-            }
-
-            // Validate file extension
-            if (!input.name.toLowerCase().endsWith('.cup')) {
-                showError('Please select a valid CUP file');
-                return;
-            }
-
             const reader = new FileReader();
 
             let yellowOptions = { color: 'black', fillColor: 'yellow', opacity: 1, fillOpacity: 1 };
             let blueOptions = { color: 'black', fillColor: 'blue', opacity: 1, fillOpacity: 1 };
             let greenOptions = { color: 'black', fillColor: 'green', opacity: 1, fillOpacity: 1 };
 
-            reader.onerror = function(error) {
-                showError('Failed to read file: ' + (reader.error ? reader.error.message : 'Unknown error'));
-            };
-
             reader.onload = function (e) {
-                try {
-                    const allText = e.target.result;
+                const allText = e.target.result;
 
-                    // delete tasks
-                    let taskLocation = allText.indexOf("-----Related Tasks-----");
+                // delete tasks
+                let taskLocation = allText.indexOf("-----Related Tasks-----");
 
-                    // correct taskLocation if string not found, or other error producing NaN or undefined
-                    taskLocation = (~taskLocation) ? taskLocation : allText.length;
+                // correct taskLocation if string not found, or other error producing NaN or undefined
+                taskLocation = (~taskLocation) ? taskLocation : allText.length;
 
-                    // parse the CUP file (which is formatted as a CSV file)
-                    let result = $.csv.toObjects(allText.substring(0, taskLocation));
-
-                    if (!result || result.length === 0) {
-                        showError('No waypoints found in file');
-                        return;
-                    }
-
-                    // Clear existing landing spots
-                    for (let spot of landingSpots) {
-                        if (spot.circle) {
-                            spot.circle.removeFrom(map);
-                        }
-                    }
-                    landingSpots = [];
-
-                    let addedCount = 0;
-                    let skippedCount = 0;
+                // parse the CUP file (which is formatted as a CSV file)
+                let result = $.csv.toObjects(allText.substring(0, taskLocation));
+                console.log(result[0]);
+                console.log(result[result.length - 1]);
 
                 // add landables first
                 for (let row of result) {
                     if (row.style == OUTLANDING) {
-                        try {
-                            let a = new LandingSpot(row, yellowOptions);
-                            if (a.circle) {
-                                landingSpots.push(a);
-                                addedCount++;
-                            }
-                        } catch (err) {
-                            // Skip invalid waypoints - likely missing required fields
-                            skippedCount++;
-                        }
+                        let a = new LandingSpot(row, yellowOptions);
+                        landingSpots.push(a);
                     }
                 }
 
                 // airports with grass surface will be layered above landable fields
                 for (let row of result) {
                     if (row.style == GRASS_SURFACE) {
-                        try {
-                            let a = new LandingSpot(row, blueOptions);
-                            if (a.circle) {
-                                landingSpots.push(a);
-                                addedCount++;
-                            }
-                        } catch (err) {
-                            // Skip invalid waypoints - likely missing required fields
-                            skippedCount++;
-                        }
+                        let a = new LandingSpot(row, blueOptions);
+                        landingSpots.push(a);
                     }
                 }
 
                 // load ordinary airports last so they will be layered above all others
                 for (let row of result) {
                     if (row.style == GLIDING_AIRFIELD || row.style == AIRPORT) {
-                        try {
-                            let a = new LandingSpot(row, greenOptions);
-                            if (a.circle) {
-                                landingSpots.push(a);
-                                addedCount++;
-                            }
-                        } catch (err) {
-                            // Skip invalid waypoints - likely missing required fields
-                            skippedCount++;
-                        }
+                        let a = new LandingSpot(row, greenOptions);
+                        landingSpots.push(a);
                     }
-                }
-
-                if (addedCount === 0) {
-                    showError('No valid waypoints found in file');
-                    return;
                 }
 
                 // Draw the landing spots according to the selected check boxes
                 drawLandingSpots();
-                
-                // Show success message with count
-                let message = `Loaded ${addedCount} waypoint${addedCount !== 1 ? 's' : ''}`;
-                if (skippedCount > 0) {
-                    message += ` (${skippedCount} skipped due to invalid data)`;
-                }
-                showSuccess(message);
-            } catch (err) {
-                showError('Failed to parse file: ' + err.message);
-            }
             };
 
             // Parses an entry in a CUP file.
+            // Will probably die if the file contains tasks.
             function LandingSpot(csvRecord, options) {
-                if (!csvRecord || !csvRecord.name || !csvRecord.lat || !csvRecord.lon || !csvRecord.elev) {
-                    throw new Error('Invalid waypoint data');
-                }
-
                 this.name = csvRecord.name;
                 this.style = csvRecord.style;
 
@@ -277,19 +165,9 @@
                 else if (csvRecord.elev.endsWith("m")) {
                     this.elevation = metersToFeet(Number(csvRecord.elev.substr(0, csvRecord.elev.length - 1)));
                 }
-                else {
-                    throw new Error('Invalid elevation format');
-                }
 
-                if (isNaN(this.elevation)) {
-                    throw new Error('Invalid elevation value');
-                }
-
-                // Parse latitude
+                // Parse lattitude
                 let s = csvRecord.lat;
-                if (!s || s.length < 8) {
-                    throw new Error('Invalid latitude format');
-                }
                 let degrees = Number(s.substring(0, 2));
                 let minutes = Number(s.substring(2, 8));
                 let sign = s.endsWith("N") ? 1 : -1;
@@ -297,23 +175,19 @@
 
                 // Parse longitude
                 s = csvRecord.lon;
-                if (!s || s.length < 9) {
-                    throw new Error('Invalid longitude format');
-                }
                 degrees = Number(s.substring(0, 3));
                 minutes = Number(s.substring(3, 9));
                 sign = s.endsWith("E") ? 1 : -1;
                 let lon = sign * (degrees + minutes / 60.0);
 
-                if (isNaN(lat) || isNaN(lon)) {
-                    throw new Error('Invalid coordinates');
-                }
-
                 this.latLng = L.latLng(lat, lon);
                 let radius = glideRatio * (altitude - arrivalHeight - this.elevation);
                 options.radius = feetToMeters(radius);
 
-                if (!isNaN(radius)) {
+                if (isNaN(radius)) {
+                    console.log(this.name + "radius is NaN");
+                }
+                else {
                     this.circle = L.circle(this.latLng,
                         options).bindPopup(this.name + "<br>" + this.elevation.toFixed(0) + " ft");
                 }

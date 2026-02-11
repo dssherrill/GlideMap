@@ -3,21 +3,9 @@
 
 <head>
 
-    <title>Glide Range Map version 1.1.2</title>
+    <title>Glide Range Map version 1.1</title>
     <!-- 
         Change History
-        Version 1.1.2
-        * Implemented code review recommendations:
-          - Standardized variable declarations (var → const/let)
-          - Added comprehensive input validation and error handling
-          - Added accessibility improvements (ARIA labels)
-          - Fixed jQuery HTTP to HTTPS security issue
-          - Kept all library versions at original for compatibility
-          - Added package.json for dependency management
-          - Removed console.log statements from production code
-          - Added file size and format validation
-          - Improved user feedback with status messages
-        
         Version 1.1.1
         * Removed "Load file" and "Update" buttons; map now automatically updates when inputs change
         
@@ -76,9 +64,7 @@
 
 <body>
     <form id="myForm">
-        <label for="csvFile">Load CUP Waypoint File:</label>
-        <input type="file" id="csvFile" accept=".cup" aria-label="Upload CUP waypoint file" />
-        <span id="fileStatus" style="margin-left: 10px; color: #666;"></span>
+        <input type="file" id="csvFile" accept=".cup" />
     </form>
 
     <br>
@@ -86,30 +72,32 @@
         <div id="map" style="width: 1000px; height: 600px;"></div>
 
         <!-- <form id="options"> -->
-        <label for="glideRatioInput">Glide Ratio</label> <input type="number" value="20" min="1" max="100" step="0.1" id="glideRatioInput"
-            name="glideRatioInput" aria-label="Glide ratio (1-100)" required />
+        <label for="glideRatioInput">Glide Ratio</label> <input type="number" value="20" min="0" id="glideRatioInput"
+            name="glideRatioInput" autofocus />
         <br>
-        <label for="altitudeInput">Altitude AGL (ft)</label> <input type="number" value="3500" min="0" max="50000" step="100"
-            id="altitudeInput" name="altitudeInput" aria-label="Altitude above ground level in feet (0-50000)" required />
+        <label for="altitudeInput">Altitude AGL (ft)</label> <input type="number" value="3500" min="0"
+            id="altitudeInput" name="altitudeInput" autofocus />
         <br>
-        <label for="arrivalHeightInput">Arrival Height (ft)</label> <input type="number" value="1000" min="0" max="10000" step="100"
-            id="arrivalHeightInput" name="arrivalHeightInput" aria-label="Minimum arrival height in feet (0-10000)" required />
+        <label for="arrivalHeightInput">Arrival Height (ft)</label> <input type="number" value="1000" min="0"
+            id="arrivalHeightInput" name="arrivalHeightInput" autofocus />
         <br>
 
         <div>
-            <input class="messageCheckbox" type="checkbox" id="airports" name="fieldType" checked aria-label="Show airports">
+            <input class="messageCheckbox" type="checkbox" id="airports" name="fieldType" checked>
             <label for="airports">Airports</label>
         </div>
 
         <div>
-            <input class="messageCheckbox" type="checkbox" id="grassStrips" name="fieldType" aria-label="Show grass strips">
+            <input class="messageCheckbox" type="checkbox" id="grassStrips" name="fieldType">
             <label for="grassStrips">Grass Strips</label>
         </div>
 
         <div>
-            <input class="messageCheckbox" type="checkbox" id="landableFields" name="fieldType" aria-label="Show landable fields">
+            <input class="messageCheckbox" type="checkbox" id="landableFields" name="fieldType">
             <label for="landableFields">Landable Fields</label>
         </div>
+
+        <button onclick="buttonUpdateClick()">Update</button>
     </form>
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/lodash/4.12.0/lodash.min.js"></script>
