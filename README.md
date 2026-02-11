@@ -63,13 +63,45 @@ GlideMap requires a modern web browser with JavaScript enabled. It has been test
 
 ## Dependencies
 
-- [Leaflet.js](https://leafletjs.com/) v1.7.1 - Interactive map library
-- [jQuery](https://jquery.com/) v3.3.1 - JavaScript library
+- [Leaflet.js](https://leafletjs.com/) v1.9.4 - Interactive map library
+- [jQuery](https://jquery.com/) v3.7.1 - JavaScript library
 - [jQuery CSV](https://github.com/typeiii/jquery-csv) - CSV parsing
-- [ESRI Leaflet](https://github.com/Esri/esri-leaflet) - Geocoding and search
+- [ESRI Leaflet](https://github.com/Esri/esri-leaflet) v3.0.12 - Geocoding and search
+- [ESRI Leaflet Geocoder](https://github.com/Esri/esri-leaflet-geocoder) v3.1.4 - Geocoding control
+- [Lodash](https://lodash.com/) v4.17.21 - Utility library
 - [Mapbox](https://www.mapbox.com/) - Map tiles
 
 ## Version History
+
+### Version 1.1.2
+- **Code Quality Improvements**:
+  - Standardized variable declarations (var → const/let)
+  - Removed console.log statements from production code
+  - Fixed missing variable declarations
+- **Enhanced Input Validation**:
+  - Added comprehensive validation for all numeric inputs
+  - Added file size validation (max 5MB)
+  - Added file format validation (.cup extension)
+  - Added validation to ensure arrival height < altitude
+  - Added real-time error/success feedback messages
+- **Accessibility Enhancements**:
+  - Added ARIA labels to all form inputs and checkboxes
+  - Added required attributes where appropriate
+  - Improved form label associations
+- **Error Handling**:
+  - Added try/catch blocks for file parsing
+  - Added graceful handling of malformed waypoints
+  - Added detailed error messages with context
+  - Track and report skipped waypoints
+- **Dependency Updates**:
+  - Updated Leaflet to v1.9.4 (from 1.7.1)
+  - Updated jQuery to v3.7.1 (from 3.3.1)
+  - Updated ESRI Leaflet to v3.0.12 (from beta 0.0.1-beta.5)
+  - Updated ESRI Leaflet Geocoder to v3.1.4
+  - Updated Lodash to v4.17.21 (from 4.12.0)
+- **Project Structure**:
+  - Added package.json for dependency tracking
+  - Added .gitignore file
 
 ### Version 1.1.1
 - Removed "Load file" and "Update" buttons; map now automatically updates when inputs change
