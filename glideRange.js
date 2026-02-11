@@ -31,17 +31,6 @@
         let altitude = parseFloat(document.getElementById('altitudeInput').value);
         let arrivalHeight = parseFloat(document.getElementById('arrivalHeightInput').value);
 
-        // function onMapClick(e) {
-        // 	L.popup()
-        // 		.setLatLng(e.latlng)
-        // 		.setContent(e.latlng.toString())
-        // 		.openOn(map);
-        // }
-
-        function buttonUpdateClick(e) {
-            drawLandingSpots();
-        }
-
         // Updates the radius of the circle for every landing spot using the parameters read from the form
         function drawLandingSpots(e) {
             let glideRatio = parseFloat(document.getElementById('glideRatioInput').value);
