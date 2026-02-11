@@ -63,12 +63,12 @@ GlideMap requires a modern web browser with JavaScript enabled. It has been test
 
 ## Dependencies
 
-- [Leaflet.js](https://leafletjs.com/) v1.9.4 - Interactive map library
-- [jQuery](https://jquery.com/) v3.7.1 - JavaScript library
+- [Leaflet.js](https://leafletjs.com/) v1.7.1 - Interactive map library
+- [jQuery](https://jquery.com/) v3.3.1 - JavaScript library
 - [jQuery CSV](https://github.com/typeiii/jquery-csv) - CSV parsing
-- [ESRI Leaflet](https://github.com/Esri/esri-leaflet) v0.0.1-beta.5 - Geocoding and search (using beta for compatibility)
+- [ESRI Leaflet](https://github.com/Esri/esri-leaflet) v0.0.1-beta.5 - Geocoding and search
 - [ESRI Leaflet Geocoder](https://github.com/Esri/esri-leaflet-geocoder) v0.0.1-beta.5 - Geocoding control
-- [Lodash](https://lodash.com/) v4.17.21 - Utility library
+- [Lodash](https://lodash.com/) v4.12.0 - Utility library
 - [Mapbox](https://www.mapbox.com/) - Map tiles
 
 ## Version History
@@ -93,11 +93,9 @@ GlideMap requires a modern web browser with JavaScript enabled. It has been test
   - Added graceful handling of malformed waypoints
   - Added detailed error messages with context
   - Track and report skipped waypoints
-- **Dependency Updates**:
-  - Updated Leaflet to v1.9.4 (from 1.7.1)
-  - Updated jQuery to v3.7.1 (from 3.3.1)
-  - Kept ESRI Leaflet at v0.0.1-beta.5 for API compatibility
-  - Updated Lodash to v4.17.21 (from 4.12.0)
+- **Security Fix**:
+  - Fixed jQuery CDN to use HTTPS instead of HTTP
+- **Code Quality maintained with original library versions for compatibility**
 - **Project Structure**:
   - Added package.json for dependency tracking
   - Added .gitignore file
