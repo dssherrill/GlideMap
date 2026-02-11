@@ -48,10 +48,40 @@ class GlideParams {
     }
 }
 
+/**
+ * Validates and sanitizes user input for glide parameters
+ * @param {number} value - The value to validate
+ * @param {number} min - Minimum allowed value
+ * @param {number} max - Maximum allowed value
+ * @param {number} defaultValue - Default value if validation fails
+ * @returns {number} Validated and sanitized value
+ */
+function validateInput(value, min, max, defaultValue) {
+    const num = parseFloat(value);
+    if (isNaN(num) || num < min || num > max) {
+        return defaultValue;
+    }
+    return num;
+}
+
 function getGlideParams() {
-    let glideRatio = parseFloat(document.getElementById('glideRatioInput').value);
-    let altitude = parseFloat(document.getElementById('altitudeInput').value);
-    let arrivalHeight = parseFloat(document.getElementById('arrivalHeightInput').value);
+    let glideRatio = validateInput(
+        document.getElementById('glideRatioInput').value,
+        1, 100, 20
+    );
+    let altitude = validateInput(
+        document.getElementById('altitudeInput').value,
+        0, 50000, 3500
+    );
+    let arrivalHeight = validateInput(
+        document.getElementById('arrivalHeightInput').value,
+        0, 10000, 1000
+    );
+
+    // Ensure arrival height is less than altitude
+    if (arrivalHeight >= altitude) {
+        arrivalHeight = Math.max(0, altitude - 100);
+    }
 
     return new GlideParams(glideRatio, altitude, arrivalHeight);
 }
@@ -200,15 +230,22 @@ let tiles = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}
 
 L.control.scale().addTo(map);
 
-// Updates the radius of the circle for every landing spot using the parameters read from the form.\
-// This is called when any input parameter changes
+/**
+ * Updates the radius of circles for all landing spots based on current parameters
+ * This is called when any input parameter changes
+ */
 function drawLandingSpots(e) {
     let glideParams = getGlideParams();
 
-    // Save the form inputs
-    localStorage.setItem('glideRatio', glideParams.glideRatio);
-    localStorage.setItem('altitude', glideParams.altitude);
-    localStorage.setItem('arrivalHeight', glideParams.arrivalHeight);
+    // Save the form inputs with error handling
+    try {
+        localStorage.setItem('glideRatio', glideParams.glideRatio);
+        localStorage.setItem('altitude', glideParams.altitude);
+        localStorage.setItem('arrivalHeight', glideParams.arrivalHeight);
+    } catch (error) {
+        console.warn('Could not save parameters to localStorage:', error);
+        // Continue even if storage fails
+    }
 
     for (let ls of landingSpots) {
         ls.circle.setRadius(glideParams.radius(ls.elevation));
@@ -259,33 +296,83 @@ glideParameters.addEventListener('change', drawLandingSpots);
 // Load the default landing spots
 map.whenReady(function () {
     // Try to reload the stored copy of the CUP file
-    let allText = localStorage.getItem('landingSpots');
-    if (allText) {
-        processCupData(allText);
+    try {
+        let allText = localStorage.getItem('landingSpots');
+        if (allText) {
+            processCupData(allText);
+            restoreGlideParameters();
+            drawLandingSpots();
+        }
+        else {
+            // Nothing has been stored. Load the default CUP file
+            fetch('https://dssherrill.github.io/Sterling,%20Massachusetts%202021%20SeeYou.cup')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    restoreGlideParameters();
+                    processCupData(data);
+                })
+                .catch(error => {
+                    console.error('Error loading default CUP file:', error);
+                    // Continue with empty map if default file fails to load
+                    restoreGlideParameters();
+                });
+        }
+    } catch (error) {
+        console.error('Error accessing localStorage:', error);
+        // Continue with defaults if localStorage fails
         restoreGlideParameters();
-        drawLandingSpots();
-    }
-    else {
-        // Nothing has been stored.  Load the default CUP file
-        fetch('https://dssherrill.github.io/Sterling,%20Massachusetts%202021%20SeeYou.cup')
-            .then(response => response.text())
-            .then(data => {
-                restoreGlideParameters();
-                processCupData(data);
-            });
     }
 });
 
+/**
+ * Loads and processes a CUP waypoint file selected by the user
+ * @param {Event} e - The file input change event
+ */
 function loadCupFile(e) {
     e.preventDefault();
 
     const input = csvFile.files[0];
+    if (!input) {
+        console.warn('No file selected');
+        return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (input.size > maxSize) {
+        console.error('File too large. Maximum size is 5MB');
+        alert('File is too large. Please select a file smaller than 5MB.');
+        return;
+    }
+
     const reader = new FileReader();
 
+    reader.onerror = function() {
+        console.error('Error reading file');
+        alert('Error reading file. Please try again.');
+    };
+
     reader.onload = function (e) {
-        const allText = e.target.result;
-        processCupData(allText);
-        localStorage.setItem('landingSpots', allText);
+        try {
+            const allText = e.target.result;
+            processCupData(allText);
+            
+            // Store in localStorage with error handling
+            try {
+                localStorage.setItem('landingSpots', allText);
+            } catch (storageError) {
+                console.warn('Could not save to localStorage:', storageError);
+                // Continue even if storage fails
+            }
+        } catch (error) {
+            console.error('Error processing CUP file:', error);
+            alert('Error processing CUP file. Please check the file format.');
+        }
     };
 
     reader.readAsText(input);
