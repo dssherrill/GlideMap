@@ -161,8 +161,8 @@
             let blueOptions = { color: 'black', fillColor: 'blue', opacity: 1, fillOpacity: 1 };
             let greenOptions = { color: 'black', fillColor: 'green', opacity: 1, fillOpacity: 1 };
 
-            reader.onerror = function() {
-                showError('Failed to read file. Please try again.');
+            reader.onerror = function(error) {
+                showError('Failed to read file: ' + (reader.error ? reader.error.message : 'Unknown error'));
             };
 
             reader.onload = function (e) {
@@ -192,6 +192,7 @@
                     landingSpots = [];
 
                     let addedCount = 0;
+                    let skippedCount = 0;
 
                 // add landables first
                 for (let row of result) {
@@ -203,7 +204,8 @@
                                 addedCount++;
                             }
                         } catch (err) {
-                            // Skip invalid waypoints
+                            // Skip invalid waypoints - likely missing required fields
+                            skippedCount++;
                         }
                     }
                 }
@@ -218,7 +220,8 @@
                                 addedCount++;
                             }
                         } catch (err) {
-                            // Skip invalid waypoints
+                            // Skip invalid waypoints - likely missing required fields
+                            skippedCount++;
                         }
                     }
                 }
@@ -233,7 +236,8 @@
                                 addedCount++;
                             }
                         } catch (err) {
-                            // Skip invalid waypoints
+                            // Skip invalid waypoints - likely missing required fields
+                            skippedCount++;
                         }
                     }
                 }
@@ -245,7 +249,13 @@
 
                 // Draw the landing spots according to the selected check boxes
                 drawLandingSpots();
-                showSuccess(`Loaded ${addedCount} waypoint${addedCount !== 1 ? 's' : ''}`);
+                
+                // Show success message with count
+                let message = `Loaded ${addedCount} waypoint${addedCount !== 1 ? 's' : ''}`;
+                if (skippedCount > 0) {
+                    message += ` (${skippedCount} skipped due to invalid data)`;
+                }
+                showSuccess(message);
             } catch (err) {
                 showError('Failed to parse file: ' + err.message);
             }
