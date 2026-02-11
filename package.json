@@ -1,0 +1,40 @@
+{
+  "name": "glidemap",
+  "version": "1.1.2",
+  "description": "A web-based glider range calculator that visualizes reachable landing spots on an interactive map",
+  "main": "glideRange.js",
+  "scripts": {
+    "test": "echo \"No tests configured\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dssherrill/GlideMap.git"
+  },
+  "keywords": [
+    "gliding",
+    "aviation",
+    "map",
+    "leaflet",
+    "cup",
+    "waypoints"
+  ],
+  "author": "dssherrill",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/dssherrill/GlideMap/issues"
+  },
+  "homepage": "https://github.com/dssherrill/GlideMap#readme",
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "esri-leaflet": "^3.0.12",
+    "esri-leaflet-geocoder": "^3.1.4",
+    "jquery": "^3.7.1",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {},
+  "browserslist": [
+    "defaults",
+    "not IE 11",
+    "maintained node versions"
+  ]
+}
