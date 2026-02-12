@@ -444,9 +444,12 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height):
             print(f"Error creating marker for {spot.get('name', 'unknown')}: {e}")
             continue
     
-    # Recenter map only when landing spots change (not when parameters change)
+    # Recenter map when landing spots change (not when parameters change)
+    # Also recenter on initial page load when default data is present
     triggered_id = ctx.triggered_id if ctx.triggered_id else None
-    if triggered_id == 'landing-spots-store':
+    
+    # Check if this is initial load (no triggered_id) or if landing spots changed
+    if triggered_id is None or triggered_id == 'landing-spots-store':
         # Calculate new bounds based on landing spots
         bounds = calculate_map_bounds(landing_spots)
         return markers, bounds
