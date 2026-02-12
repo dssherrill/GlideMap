@@ -320,7 +320,7 @@ app.layout = dbc.Container([
                         id="map",
                         center=default_center,
                         zoom=9,
-                        bounds=None,  # Will be updated when CUP data loads
+                        viewport=None,  # Will be updated when CUP data loads
                         style={'width': '100%', 'height': '600px'},
                         children=[
                             dl.TileLayer(
@@ -380,7 +380,7 @@ def load_cup_file(contents, filename):
 
 @callback(
     [Output('landing-spots-layer', 'children'),
-     Output('map', 'bounds')],
+     Output('map', 'viewport')],
     [Input('landing-spots-store', 'data'),
      Input('glide-ratio', 'value'),
      Input('altitude', 'value'),
@@ -452,9 +452,13 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height):
     if triggered_id is None or triggered_id == 'landing-spots-store':
         # Calculate new bounds based on landing spots
         bounds = calculate_map_bounds(landing_spots)
-        return markers, bounds
+        
+        # Create viewport dict with bounds to trigger map recentering
+        # viewport must be a dict with 'bounds' key for Dash Leaflet to recenter
+        viewport = {'bounds': bounds} if bounds else None
+        return markers, viewport
     else:
-        # Don't update bounds when only parameters change
+        # Don't update viewport when only parameters change
         return markers, no_update
 
 
