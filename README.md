@@ -48,13 +48,17 @@ Simply visit the [live application](https://dssherrill.github.io/GlideRange.html
 
 ```
 GlideMap/
-├── GlideRange.html                              # Main HTML application file
-├── glideRange.js                                # Core JavaScript logic
-├── jquery.csv.js                                # CSV parsing library for CUP files
-├── Sterling, Massachusetts 2021 SeeYou.cup      # Sample CUP file (note: filename contains spaces)
-├── LICENSE                                      # GNU GPL v3 License
-├── SECURITY_IMPROVEMENTS.md                     # Documentation of security enhancements
-└── README.md                                    # This file
+├── .github/
+│   └── workflows/
+│       └── deploy-to-github-pages.yml               # GitHub Actions deployment workflow
+├── GlideRange.html                                  # Main HTML application file
+├── glideRange.js                                    # Core JavaScript logic
+├── jquery.csv.js                                    # CSV parsing library for CUP files
+├── Sterling, Massachusetts 2021 SeeYou.cup          # Sample CUP file (note: filename contains spaces)
+├── LICENSE                                          # GNU GPL v3 License
+├── SECURITY_IMPROVEMENTS.md                         # Documentation of security enhancements
+├── DEPLOYMENT.md                                    # Deployment guide and instructions
+└── README.md                                        # This file
 ```
 
 ## CUP File Format
@@ -138,6 +142,17 @@ Tested and working on:
 - Fixed problem with negative radius
 - Support for CUP files with elevation in feet or meters
 - Improved CUP file parsing
+
+## Deployment
+
+This repository automatically deploys to GitHub Pages at https://dssherrill.github.io/GlideRange.html using GitHub Actions.
+
+**For maintainers:** See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions on:
+- Setting up automated deployment with GitHub Actions
+- Manual deployment procedures
+- Troubleshooting deployment issues
+
+The automated workflow deploys changes whenever code is pushed to the `main` branch.
 
 ## License
 

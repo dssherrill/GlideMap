@@ -1,0 +1,53 @@
+name: Deploy to GitHub Pages
+
+# Trigger the workflow on push to main branch
+on:
+  push:
+    branches:
+      - main
+  # Allow manual trigger from Actions tab
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout GlideMap repository
+        uses: actions/checkout@v4
+        with:
+          path: glide-map
+      
+      - name: Checkout GitHub Pages repository
+        uses: actions/checkout@v4
+        with:
+          repository: dssherrill/dssherrill.github.io
+          token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+          path: pages-repo
+      
+      - name: Copy files to GitHub Pages repository
+        run: |
+          # Copy the main application files
+          cp glide-map/GlideRange.html pages-repo/GlideRange.html
+          cp glide-map/glideRange.js pages-repo/glideRange.js
+          cp glide-map/jquery.csv.js pages-repo/jquery.csv.js
+          cp "glide-map/Sterling, Massachusetts 2021 SeeYou.cup" "pages-repo/Sterling, Massachusetts 2021 SeeYou.cup"
+          
+          # Copy LICENSE and other documentation if needed
+          cp glide-map/LICENSE pages-repo/LICENSE
+      
+      - name: Commit and push changes
+        working-directory: pages-repo
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          
+          # Check if there are any changes
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Auto-deploy from GlideMap repository (commit: ${{ github.sha }})"
+            git push
+            echo "Changes deployed successfully!"
+          else
+            echo "No changes to deploy."
+          fi
