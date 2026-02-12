@@ -563,7 +563,11 @@ app.layout = html.Div(
                                                     style={"paddingLeft": "1.2rem"},
                                                 ),
                                                 html.P(
-                                                    "Adjust parameters on the left. Range circles ignore terrain.",
+                                                    "Adjust parameters on the left.",
+                                                    className="small mb-0",
+                                                ),
+                                                html.P(
+                                                    "Range circles ignore blocking terrain.",
                                                     className="small mb-0",
                                                 ),
                                             ],
