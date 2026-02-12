@@ -360,17 +360,22 @@ app.layout = dbc.Container([
                         dismissable=True,
                         className="mb-3"
                     ),
-                    dl.Map(
-                        id="map",
-                        center=default_center,
-                        zoom=9,
-                        style={'width': '100%', 'height': '600px'},
+                    html.Div(
+                        id="map-container",
                         children=[
-                            dl.TileLayer(
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            ),
-                            dl.LayerGroup(id="landing-spots-layer")
+                            dl.Map(
+                                id="map",
+                                center=default_center,
+                                zoom=9,
+                                style={'width': '100%', 'height': '600px'},
+                                children=[
+                                    dl.TileLayer(
+                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                    ),
+                                    dl.LayerGroup(id="landing-spots-layer")
+                                ]
+                            )
                         ]
                     )
                 ])
@@ -392,7 +397,10 @@ app.layout = dbc.Container([
     ]),
     
     # Store for landing spots data - load default CUP file on initialization
-    dcc.Store(id='landing-spots-store', data=load_default_cup_file())
+    dcc.Store(id='landing-spots-store', data=load_default_cup_file()),
+    
+    # Store for map key to force recentering when data changes
+    dcc.Store(id='map-key-store', data=0)
 ], fluid=True, className="py-4")
 
 
@@ -422,15 +430,26 @@ def load_cup_file(contents, filename):
 
 
 @callback(
+    Output('map-key-store', 'data'),
+    Input('landing-spots-store', 'data'),
+    State('map-key-store', 'data')
+)
+def update_map_key(landing_spots, current_key):
+    """Increment map key when landing spots change to force map remount"""
+    # Increment counter whenever landing spots change
+    return current_key + 1
+
+
+@callback(
     [Output('landing-spots-layer', 'children'),
-     Output('map', 'center'),
-     Output('map', 'zoom')],
+     Output('map-container', 'children')],
     [Input('landing-spots-store', 'data'),
      Input('glide-ratio', 'value'),
      Input('altitude', 'value'),
-     Input('arrival-height', 'value')]
+     Input('arrival-height', 'value')],
+    [State('map-key-store', 'data')]
 )
-def update_map(landing_spots, glide_ratio, altitude, arrival_height):
+def update_map(landing_spots, glide_ratio, altitude, arrival_height, map_key):
     """Update map with landing spots and glide range circles"""
     if not landing_spots:
         return [], no_update
@@ -500,13 +519,27 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height):
         # Calculate center and zoom from bounds
         center, zoom = calculate_center_and_zoom_from_bounds(bounds)
         
-        # Return center and zoom directly
-        # Note: After user manually pans/zooms, these updates may not recenter the view
-        # This is standard Leaflet behavior when user has interacted with the map
-        return markers, center, zoom
+        # Create a new map with unique key to force remount
+        # This ensures the map recenters even after user has manually panned/zoomed
+        new_map = dl.Map(
+            id="map",
+            key=f"map-{map_key}",  # Unique key forces React remount
+            center=center,
+            zoom=zoom,
+            style={'width': '100%', 'height': '600px'},
+            children=[
+                dl.TileLayer(
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                ),
+                dl.LayerGroup(id="landing-spots-layer", children=markers)
+            ]
+        )
+        
+        return [], new_map
     else:
-        # Don't update center/zoom when only parameters change
-        return markers, no_update, no_update
+        # Don't update map when only parameters change, just update markers
+        return markers, no_update
 
 
 if __name__ == '__main__':
