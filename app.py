@@ -332,7 +332,8 @@ app.layout = dbc.Container([
                             color="primary",
                             className="mb-2"
                         ),
-                        multiple=False
+                        multiple=False,
+                        style={'display': 'inline-block'}
                     ),
                     html.Div(id='upload-status', className="text-muted"),
                 ])
