@@ -625,30 +625,27 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height, map_key):
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         ),
-                        # Separate overlay layers for each landing spot type
-                        dl.Overlay(
-                            dl.LayerGroup(children=airports_markers),
-                            name='<span style="background: #AAC896; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Airports',
-                            checked=True,
-                            id="airports-layer"
-                        ),
-                        dl.Overlay(
-                            dl.LayerGroup(children=grass_strips_markers),
-                            name='<span style="background: #AAAADC; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Grass Strips',
-                            checked=True,
-                            id="grass-layer"
-                        ),
-                        dl.Overlay(
-                            dl.LayerGroup(children=landables_markers),
-                            name='<span style="background: #E6E696; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Landable Fields',
-                            checked=True,
-                            id="landables-layer"
-                        ),
-                        # Layers control positioned at top-left
-                        dl.LayersControl(
-                            position="topleft",
-                            id="layers-control"
-                        )
+                        # Layers control with overlay layers as children
+                        dl.LayersControl([
+                            dl.Overlay(
+                                dl.LayerGroup(children=airports_markers),
+                                name='<span style="background: #AAC896; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Airports',
+                                checked=True,
+                                id="airports-layer"
+                            ),
+                            dl.Overlay(
+                                dl.LayerGroup(children=grass_strips_markers),
+                                name='<span style="background: #AAAADC; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Grass Strips',
+                                checked=True,
+                                id="grass-layer"
+                            ),
+                            dl.Overlay(
+                                dl.LayerGroup(children=landables_markers),
+                                name='<span style="background: #E6E696; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Landable Fields',
+                                checked=True,
+                                id="landables-layer"
+                            ),
+                        ], position="topleft", id="layers-control")
                     ]
                 )
             ]
@@ -676,30 +673,27 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height, map_key):
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         ),
-                        # Separate overlay layers for each landing spot type
-                        dl.Overlay(
-                            dl.LayerGroup(children=airports_markers),
-                            name='<span style="background: #AAC896; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Airports',
-                            checked=True,
-                            id="airports-layer"
-                        ),
-                        dl.Overlay(
-                            dl.LayerGroup(children=grass_strips_markers),
-                            name='<span style="background: #AAAADC; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Grass Strips',
-                            checked=True,
-                            id="grass-layer"
-                        ),
-                        dl.Overlay(
-                            dl.LayerGroup(children=landables_markers),
-                            name='<span style="background: #E6E696; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Landable Fields',
-                            checked=True,
-                            id="landables-layer"
-                        ),
-                        # Layers control positioned at top-left
-                        dl.LayersControl(
-                            position="topleft",
-                            id="layers-control"
-                        )
+                        # Layers control with overlay layers as children
+                        dl.LayersControl([
+                            dl.Overlay(
+                                dl.LayerGroup(children=airports_markers),
+                                name='<span style="background: #AAC896; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Airports',
+                                checked=True,
+                                id="airports-layer"
+                            ),
+                            dl.Overlay(
+                                dl.LayerGroup(children=grass_strips_markers),
+                                name='<span style="background: #AAAADC; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Grass Strips',
+                                checked=True,
+                                id="grass-layer"
+                            ),
+                            dl.Overlay(
+                                dl.LayerGroup(children=landables_markers),
+                                name='<span style="background: #E6E696; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Landable Fields',
+                                checked=True,
+                                id="landables-layer"
+                            ),
+                        ], position="topleft", id="layers-control")
                     ]
                 )
             ]
