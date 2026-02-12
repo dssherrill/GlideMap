@@ -301,6 +301,13 @@ app.index_string = '''
                 flex: 1;
                 position: relative;
                 overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+            #map-container {
+                flex: 1;
+                height: 100%;
+                min-height: 0;
             }
             .instructions-overlay {
                 position: absolute;
@@ -310,6 +317,10 @@ app.index_string = '''
                 z-index: 1000;
                 max-width: 400px;
                 width: 90%;
+                pointer-events: none;
+            }
+            .instructions-overlay > * {
+                pointer-events: auto;
             }
             .footer-section {
                 padding: 0.5rem;
