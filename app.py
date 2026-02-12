@@ -181,6 +181,50 @@ def load_default_cup_file():
     return []
 
 
+def calculate_center_and_zoom_from_bounds(bounds):
+    """
+    Calculate center and zoom level from bounds
+    Returns (center, zoom) tuple
+    """
+    if not bounds:
+        return default_center, 9
+    
+    # Extract coordinates
+    min_lat, min_lon = bounds[0]
+    max_lat, max_lon = bounds[1]
+    
+    # Calculate center
+    center_lat = (min_lat + max_lat) / 2
+    center_lon = (min_lon + max_lon) / 2
+    center = [center_lat, center_lon]
+    
+    # Calculate zoom level based on coordinate span
+    lat_diff = max_lat - min_lat
+    lon_diff = max_lon - min_lon
+    max_diff = max(lat_diff, lon_diff)
+    
+    # Zoom level calculation (rough approximation)
+    # Each zoom level roughly doubles the scale
+    if max_diff > 10:
+        zoom = 6
+    elif max_diff > 5:
+        zoom = 7
+    elif max_diff > 2:
+        zoom = 8
+    elif max_diff > 1:
+        zoom = 9
+    elif max_diff > 0.5:
+        zoom = 10
+    elif max_diff > 0.2:
+        zoom = 11
+    elif max_diff > 0.1:
+        zoom = 12
+    else:
+        zoom = 13
+    
+    return center, zoom
+
+
 def calculate_map_bounds(landing_spots):
     """
     Calculate map bounds from landing spots
@@ -320,7 +364,6 @@ app.layout = dbc.Container([
                         id="map",
                         center=default_center,
                         zoom=9,
-                        viewport=None,  # Will be updated when CUP data loads
                         style={'width': '100%', 'height': '600px'},
                         children=[
                             dl.TileLayer(
@@ -380,7 +423,8 @@ def load_cup_file(contents, filename):
 
 @callback(
     [Output('landing-spots-layer', 'children'),
-     Output('map', 'viewport')],
+     Output('map', 'center'),
+     Output('map', 'zoom')],
     [Input('landing-spots-store', 'data'),
      Input('glide-ratio', 'value'),
      Input('altitude', 'value'),
@@ -453,13 +497,12 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height):
         # Calculate new bounds based on landing spots
         bounds = calculate_map_bounds(landing_spots)
         
-        # Create viewport dict with bounds to trigger map recentering
-        # viewport must be a dict with 'bounds' key for Dash Leaflet to recenter
-        viewport = {'bounds': bounds} if bounds else None
-        return markers, viewport
+        # Calculate center and zoom from bounds
+        center, zoom = calculate_center_and_zoom_from_bounds(bounds)
+        return markers, center, zoom
     else:
-        # Don't update viewport when only parameters change
-        return markers, no_update
+        # Don't update center/zoom when only parameters change
+        return markers, no_update, no_update
 
 
 if __name__ == '__main__':
