@@ -20,6 +20,7 @@ import base64
 import io
 import re
 import os
+import time
 from dash import Dash, html, dcc, Input, Output, State, callback, no_update, ctx
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
@@ -364,6 +365,7 @@ app.layout = dbc.Container([
                         id="map",
                         center=default_center,
                         zoom=9,
+                        viewport=None,  # Will be updated to force recentering
                         style={'width': '100%', 'height': '600px'},
                         children=[
                             dl.TileLayer(
@@ -423,8 +425,7 @@ def load_cup_file(contents, filename):
 
 @callback(
     [Output('landing-spots-layer', 'children'),
-     Output('map', 'center'),
-     Output('map', 'zoom')],
+     Output('map', 'viewport')],
     [Input('landing-spots-store', 'data'),
      Input('glide-ratio', 'value'),
      Input('altitude', 'value'),
@@ -499,10 +500,19 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height):
         
         # Calculate center and zoom from bounds
         center, zoom = calculate_center_and_zoom_from_bounds(bounds)
-        return markers, center, zoom
+        
+        # Create viewport dict with timestamp to force update even if bounds haven't changed
+        # The timestamp ensures Dash recognizes this as a new value and updates the map
+        viewport = {
+            'center': center,
+            'zoom': zoom,
+            'transition': 'flyTo',  # Use flyTo for smooth animation
+            '_timestamp': time.time()  # Force unique value each time
+        }
+        return markers, viewport
     else:
-        # Don't update center/zoom when only parameters change
-        return markers, no_update, no_update
+        # Don't update viewport when only parameters change
+        return markers, no_update
 
 
 if __name__ == '__main__':
