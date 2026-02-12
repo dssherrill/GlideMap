@@ -236,7 +236,7 @@ GrassStrips.on('add', function () {
 // 1. Get a token from https://account.mapbox.com/
 // 2. Replace the access_token parameter below with your token
 // 3. See CONFIGURATION.md for detailed instructions and security best practices
-let tiles = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZHNzaGVycmlsbCIsImEiOiJjbDAydXFrbWowaDI5M2JtajBlZTFzaXluIn0.Wji4RxsuxVWPHl8yf26yJQ', {
+let tiles = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZHNzaGVycmlsbCIsImEiOiJjbWxpdXYwdG8wNzJjM2twcXU3YzA1Y3pvIn0.iauIPMpWdad-JiAR3ehz2Q', {
     maxZoom: 18,
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
         'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
