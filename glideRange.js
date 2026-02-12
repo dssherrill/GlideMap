@@ -1,197 +1,502 @@
-        var sterling = L.latLng(42.426, -71.793);
-        var map = L.map('map').setView(sterling, 8);
+// Copyright (c) David S. Sherrill
+//    
+// This file is part of Glide Range Map.
+//
+// Glide Range Map is free software: you can redistribute it and/or modify it under the terms 
+// of the GNU General Public License as published by the Free Software Foundation, either
+// version 3 of the License, or (at your option) any later version.
+//
+// Glide Range Map is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+// without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with Glide Range Map. 
+// If not, see https://www.gnu.org/licenses/.
 
-        var tiles = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
-            maxZoom: 18,
-            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
-                'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-            id: 'mapbox/streets-v11',
-            tileSize: 512,
-            zoomOffset: -1
-        }).addTo(map);
+/*jshint esversion: 6 */
+
+// Validation constants - keep in sync with HTML input attributes
+const GLIDE_RATIO_MIN = 1;
+const GLIDE_RATIO_MAX = 100;
+const GLIDE_RATIO_DEFAULT = 20;
+const ALTITUDE_MIN = 0;
+const ALTITUDE_MAX = 50000;
+const ALTITUDE_DEFAULT = 3500;
+const ARRIVAL_HEIGHT_MIN = 0;
+const ARRIVAL_HEIGHT_MAX = 10000;
+const ARRIVAL_HEIGHT_DEFAULT = 1000;
+
+// Clear stored entries on reset request
+const paramsString = window.location.search;
+let searchParams = new URLSearchParams(paramsString);
+if (searchParams.has('reset')) {
+    localStorage.removeItem("glideRatio");
+    localStorage.removeItem("altitude");
+    localStorage.removeItem("arrivalHeight");
+    localStorage.removeItem("landingSpots");
+}
+
+// These address the unpredictable column labels in the CUP file, as described
+// in the lengthy comment (below) in "function processCupData(allText)"
+const INDEX_NAME = 0;
+const INDEX_LAT = 3;
+const INDEX_LON = 4;
+const INDEX_ELEV = 5;
+const INDEX_STYLE = 6;
+
+class GlideParams {
+    constructor(glideRatio, altitude, arrivalHeight) {
+        this.glideRatio = glideRatio;
+        this.altitude = altitude;
+        this.arrivalHeight = arrivalHeight;
+    }
+
+    radius(elevation) {
+        let r = feetToMeters(this.glideRatio * (this.altitude - this.arrivalHeight - elevation));
+        if (isNaN(r)) r = 1.0;
+        else r = Math.max(r, 1.0);
+        return r;
+    }
+}
+
+/**
+ * Validates and sanitizes user input for glide parameters
+ * @param {number} value - The value to validate
+ * @param {number} min - Minimum allowed value
+ * @param {number} max - Maximum allowed value
+ * @param {number} defaultValue - Default value if validation fails
+ * @returns {number} Validated and sanitized value
+ */
+function validateInput(value, min, max, defaultValue) {
+    const num = parseFloat(value);
+    if (isNaN(num) || num < min || num > max) {
+        return defaultValue;
+    }
+    return num;
+}
+
+function getGlideParams() {
+    let glideRatio = validateInput(
+        document.getElementById('glideRatioInput').value,
+        GLIDE_RATIO_MIN, GLIDE_RATIO_MAX, GLIDE_RATIO_DEFAULT
+    );
+    let altitude = validateInput(
+        document.getElementById('altitudeInput').value,
+        ALTITUDE_MIN, ALTITUDE_MAX, ALTITUDE_DEFAULT
+    );
+    let arrivalHeight = validateInput(
+        document.getElementById('arrivalHeightInput').value,
+        ARRIVAL_HEIGHT_MIN, ARRIVAL_HEIGHT_MAX, ARRIVAL_HEIGHT_DEFAULT
+    );
+
+    // Ensure arrival height is less than altitude
+    if (arrivalHeight >= altitude) {
+        // Use proportional approach for low altitudes
+        arrivalHeight = Math.max(0, Math.min(altitude * 0.9, altitude - 100));
+    }
+
+    return new GlideParams(glideRatio, altitude, arrivalHeight);
+}
+
+// Parses an entry in a CUP file.
+// The following link describes the 2018 format:
+// https://downloads.naviter.com/docs/CUP-file-format-description.pdf
+// But Naviter has updated the format since then, so we must deal with 2 formats.
+// Both formats are CSV files (comma separated values) and conform to the CSV standard.
+// It is the column assignments that differ.
+//
+// The 2018 format is
+//      name,code,country,lat,lon,elev,style,rwdir,rwlen,freq,desc
+//      0    1    2       3   4   5    6     7     8     9    10 
+//
+// The current version of SeeYou uses this format (notice that freq moves from index 9 to 10):
+//      name,code,country,lat,lon,elev,style,rwdir,rwlen,rwwidth,freq,desc,userdata,pics
+//      0    1    2       3   4   5    6     7     8     9       10   11   12       13
+//
+// Turnpoint Exchange has some files with line 1 as:
+//      Title,Code,Country,Latitude,Longitude,Elevation,Style,Direction,Length,Frequency,Description
+//
+// As it turns out, the fields we are reading will always have the same position, and we can ignore the labels
+//
+class LandingSpot {
+    constructor(csvRecord) {
+        let values = Object.values(csvRecord);
+
+        this.name = values[INDEX_NAME];
+        this.style = values[INDEX_STYLE];
+
+        // Parse elevation and convert to feet if needed
+        // Format:  Number with an attached unit. Unit can be either "m" for meters or "ft" for feet.
+        let elevation = values[INDEX_ELEV];
+        if (elevation.endsWith("ft")) {
+            this.elevation = Number(elevation.substr(0, elevation.length - 2));
+        }
+        else if (elevation.endsWith("m")) {
+            this.elevation = metersToFeet(Number(elevation.substr(0, elevation.length - 1)));
+        }
+
+        // Parse lattitude
+        // Format:   ddmm.mmm{N|S}
+        // Example: "5107.830N" is equal to 51° 07.830' North
+        let valueText = values[INDEX_LAT];
+        let degrees = Number(valueText.substring(0, 2));
+        let minutes = Number(valueText.substring(2, 8));
+        let sign = valueText.endsWith("N") ? 1 : -1;
+        let lat = sign * (degrees + minutes / 60.0);
+
+        // Parse longitude
+        // Format:   dddmm.mmm{E|W}
+        // Example:  01410.467E is equal to 014° 10.467' East
+        valueText = values[INDEX_LON];
+        degrees = Number(valueText.substring(0, 3));
+        minutes = Number(valueText.substring(3, 9));
+        sign = valueText.endsWith("E") ? 1 : -1;
+        let lon = sign * (degrees + minutes / 60.0);
+
+        this.latLng = L.latLng(lat, lon);
+        this.circle = NaN;
+    }
+}
+
+let sterling = L.latLng(42.426, -71.793);
+let map = L.map('map', { maxZoom: 18 }).setView(sterling, 9);
+
+map.on('popupopen', function (e) {
+    // If this is a Landing Spot popup, locate it on the circle center instead of the mouse click
+    if (e.popup.fixedLatLng) {
+        try { e.popup.setLatLng(e.popup.fixedLatLng); }
+        catch (obj) { console.log("Repositioning circle failed for " + e); }
+    }
+});
+
+let landingSpots = [];
+let Airports = L.featureGroup().addTo(map);
+let GrassStrips = L.featureGroup().addTo(map);
+let Landables = L.featureGroup().addTo(map);
+
+let overlays = {
+    '<i style="background: #AAC896"/> Airports': Airports,
+    '<i style="background: #AAAADC"/> Grass Strips': GrassStrips,
+    '<i style="background: #E6E696"/> Landable Fields': Landables,
+};
+
+L.control.layers(null, overlays, { position: 'topleft' }).addTo(map);
+
+// Open the layer control to reveal the legend for circle colors.
+// The control will close the first time it loses focus
+// or something on the map is clicked
+$(".leaflet-control-layers").addClass("leaflet-control-layers-expanded");
+
+// Display instructions in a Tooltip box when this page first loads.
+let tooltip = L.tooltip({
+    direction: 'center',
+    permanent: true,
+    interactive: true,
+    noWrap: true,
+    opacity: 1.0
+});
+
+tooltip.setContent(
+    "<strong>NOTICE: The range circles ignore blocking terrain</strong>" +
+    "<br>" +
+    "<ul>" +
+    "<li>Hover on the Layers control (near top-left)<br>to filter landing sites by type" +
+    "<li>Adjust the soaring parameters (below map)" +
+    "<li>Use the button to load your CUP file (optional)" +
+    "<li>Click this box to dismiss it" +
+    "</ul>" +
+    "Contact:  glide@sherrill.in"
+);
+
+tooltip.setLatLng(map.getCenter());
+tooltip.addTo(map);
+
+let el = tooltip.getElement();
+el.addEventListener('click', function () { tooltip.remove(); });
+el.style.pointerEvents = 'auto';
 
 
-        // Control 2: This add a scale to the map
-        L.control.scale().addTo(map);
+// These functions fire when the user checks a box for Landing Spot type
+// in the Layers control, which adds the feature group to the map
 
-        // Control 3: This add a Search bar
-        var searchControl = new L.esri.Controls.Geosearch().addTo(map);
+// Keep the landables group on the bottom
+Landables.on('add', function () {
+    Landables.bringToBack();
+});
 
-        var results = new L.LayerGroup().addTo(map);
-
-        searchControl.on('results', function (data) {
-            results.clearLayers();
-            for (var i = data.results.length - 1; i >= 0; i--) {
-                results.addLayer(L.marker(data.results[i].latlng));
-            }
-        });
+// Keep the grass stips group in the middle
+GrassStrips.on('add', function () {
+    GrassStrips.bringToBack();
+    Landables.bringToBack();
+});
 
 
-        let glideRatio = parseFloat(document.getElementById('glideRatioInput').value);
-        let altitude = parseFloat(document.getElementById('altitudeInput').value);
-        let arrivalHeight = parseFloat(document.getElementById('arrivalHeightInput').value);
+let tiles = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZHNzaGVycmlsbCIsImEiOiJjbDAydXFrbWowaDI5M2JtajBlZTFzaXluIn0.Wji4RxsuxVWPHl8yf26yJQ', {
+    maxZoom: 18,
+    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+        'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+    id: 'mapbox/streets-v11',
+    tileSize: 512,
+    zoomOffset: -1
+}).addTo(map);
 
-        // function onMapClick(e) {
-        // 	L.popup()
-        // 		.setLatLng(e.latlng)
-        // 		.setContent(e.latlng.toString())
-        // 		.openOn(map);
-        // }
+L.control.scale().addTo(map);
 
-        function buttonUpdateClick(e) {
+/**
+ * Updates the radius of circles for all landing spots based on current parameters
+ * This is called when any input parameter changes
+ */
+function drawLandingSpots(e) {
+    let glideParams = getGlideParams();
+
+    // Save the form inputs with error handling
+    try {
+        localStorage.setItem('glideRatio', glideParams.glideRatio);
+        localStorage.setItem('altitude', glideParams.altitude);
+        localStorage.setItem('arrivalHeight', glideParams.arrivalHeight);
+    } catch (error) {
+        console.warn('Could not save parameters to localStorage:', error);
+        // Continue even if storage fails
+    }
+
+    for (let ls of landingSpots) {
+        ls.circle.setRadius(glideParams.radius(ls.elevation));
+    }
+}
+
+// reload the last set of form inputs
+function restoreGlideParameters() {
+    loadStoredValue('glideRatio', 'glideRatioInput');
+    loadStoredValue('altitude', 'altitudeInput');
+    loadStoredValue('arrivalHeight', 'arrivalHeightInput');
+}
+
+// reload a single form input
+function loadStoredValue(storageKey, htmlId) {
+    // check whether the 'name' data item is stored in web Storage
+    let storedText = localStorage.getItem(storageKey);
+    if (storedText) {
+        document.getElementById(htmlId).value = parseFloat(storedText);
+    }
+}
+
+function feetToMeters(feet) {
+    // one foot is exactly 0.3048 meters
+    return feet * 0.3048;
+}
+
+function metersToFeet(meters) {
+    return meters / 0.3048;
+}
+
+const loadFileForm = document.getElementById("loadFileForm");
+const glideParameters = document.getElementById("glideParameters");
+const csvFile = document.getElementById("csvFile");
+const GRASS_SURFACE = 2;
+const OUTLANDING = 3;
+const GLIDING_AIRFIELD = 4;
+const AIRPORT = 5;
+
+// Loads the CUP file when the "Load File" button is clicked.
+// Note that the CUP file format is a valid CSV file.
+loadFileForm.addEventListener('change', loadCupFile);
+
+// Updates circle sizes when the user changes any of the
+// input paramters (glide ratio, altitude, and arrival height).
+glideParameters.addEventListener('change', drawLandingSpots);
+
+// Load the default landing spots
+map.whenReady(function () {
+    // Try to reload the stored copy of the CUP file
+    try {
+        let allText = localStorage.getItem('landingSpots');
+        if (allText) {
+            processCupData(allText);
+            restoreGlideParameters();
             drawLandingSpots();
         }
+        else {
+            // Nothing has been stored. Load the default CUP file
+            fetch('https://dssherrill.github.io/Sterling,%20Massachusetts%202021%20SeeYou.cup')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    restoreGlideParameters();
+                    processCupData(data);
+                })
+                .catch(error => {
+                    console.error('Error loading default CUP file:', error);
+                    // Continue with empty map if default file fails to load
+                    restoreGlideParameters();
+                });
+        }
+    } catch (error) {
+        console.error('Error accessing localStorage:', error);
+        // Continue with defaults if localStorage fails
+        restoreGlideParameters();
+    }
+});
 
-        // Updates the radius of the circle for every landing spot using the parameters read from the form
-        function drawLandingSpots(e) {
-            let glideRatio = parseFloat(document.getElementById('glideRatioInput').value);
-            let altitude = parseFloat(document.getElementById('altitudeInput').value);
-            let arrivalHeight = parseFloat(document.getElementById('arrivalHeightInput').value);
+/**
+ * Loads and processes a CUP waypoint file selected by the user
+ * @param {Event} e - The file input change event
+ */
+function loadCupFile(e) {
+    e.preventDefault();
 
-            let inputElements = document.getElementsByClassName('messageCheckbox');
-            let airport = inputElements[0].checked;
-            let grassStrip = inputElements[1].checked;
-            let landable = inputElements[2].checked;
+    const input = csvFile.files[0];
+    if (!input) {
+        console.warn('No file selected');
+        return;
+    }
 
-            for (let a of landingSpots) {
-                a.circle.removeFrom(map);
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (input.size > maxSize) {
+        console.error('File too large. Maximum allowed size is 5MB');
+        alert('File is too large. Please select a file smaller than 5MB.');
+        return;
+    }
 
-                radius = glideRatio * (altitude - arrivalHeight - a.elevation);
-                radius = Math.max(1.0, radius);
-                a.circle.setRadius(feetToMeters(radius));
+    const reader = new FileReader();
 
-                if ((a.style == OUTLANDING && landable) ||
-                    (a.style == GRASS_SURFACE && grassStrip) ||
-                    (a.style == AIRPORT && airport) ||
-                    (a.style == GLIDING_AIRFIELD && airport)) {
-                    a.circle.addTo(map);
-                }
+    reader.onerror = function() {
+        console.error('Error reading file');
+        alert('Error reading file. Please try again.');
+    };
+
+    reader.onload = function (e) {
+        try {
+            const allText = e.target.result;
+            processCupData(allText);
+            
+            // Store in localStorage with error handling
+            try {
+                localStorage.setItem('landingSpots', allText);
+            } catch (storageError) {
+                console.warn('Could not save to localStorage:', storageError);
+                // Continue even if storage fails
+            }
+        } catch (error) {
+            console.error('Error processing CUP file:', error);
+            alert('Error processing CUP file. Please check the file format.');
+        }
+    };
+
+    reader.readAsText(input);
+}
+
+function processCupData(allText) {
+
+    removeAllLandingSpots();
+
+    let glideParams = getGlideParams();
+
+    let yellowOptions = { color: 'black', fillColor: 'yellow', opacity: 1, fillOpacity: 1 };
+    let blueOptions = { color: 'black', fillColor: 'blue', opacity: 1, fillOpacity: 1 };
+    let greenOptions = { color: 'black', fillColor: 'green', opacity: 1, fillOpacity: 1 };
+
+    // find the task section and ignore everything in the file from there on
+    let taskLocation = allText.indexOf("-----Related Tasks-----");
+
+    // if string not found (or other error producing NaN or undefined)
+    // then process the entire file
+    taskLocation = (~taskLocation) ? taskLocation : allText.length;
+
+    // Parse the CUP file (which is formatted as a CSV file).
+    // Stop parsing when the Task section is reached.
+    let result = $.csv.toObjects(allText.substring(0, taskLocation));
+    if (result.length == 0) { return; }
+
+    console.log(result[0]);
+    console.log(result[result.length - 1]);
+
+    // load ordinary airports first so they will be layered above all others
+    while (result.length) {
+        // Process the file in reverse order so that the circles for the first lines
+        // will be created last and will therefore be on top of the others.
+        // This allows a user to put their home airport as the first line in the 
+        // CUP file to prevent it from being buried by other nearby airports.
+        row = result.pop();
+        console.log(result.length);
+        let ls = new LandingSpot(row);
+        if (ls == null)
+        {
+            console.log("oops");
+        }
+        if (ls.style == GLIDING_AIRFIELD || ls.style == AIRPORT) {
+            ls.circle = L.circle(ls.latLng, greenOptions);
+            ls.circle.addTo(Airports);
+        }
+        else if (ls.style == GRASS_SURFACE) {
+            ls.circle = L.circle(ls.latLng, blueOptions);
+            ls.circle.addTo(GrassStrips);
+        }
+        else if (ls.style == OUTLANDING) {
+            ls.circle = L.circle(ls.latLng, yellowOptions);
+            ls.circle.addTo(Landables);
+        }
+        else{
+            continue;  // this row is not a landing spot (could be waypoint, etc.)
+        }
+        
+        let radius = glideParams.radius(ls.elevation);
+        let pop = L.popup().setLatLng(ls.latLng).setContent(ls.name + "<br>" + ls.elevation.toFixed(0) + " ft");
+        // popup().setLatLng(ls.latLng) does not work;  the popup still appears at the mouse click instead of the circle center.
+        // So save the desired center in fixedLatLng and use that value in the event handler to relocate the circle
+        pop.fixedLatLng = ls.latLng;
+
+        ls.circle.setRadius(radius).bindPopup(pop);
+        landingSpots.push(ls);
+    }
+
+    // Force the layer order to be
+    //  Airports (on top)
+    //  Grass Strips
+    //  Landable Fields
+    GrassStrips.bringToBack();
+    Landables.bringToBack();
+
+    // Center the map on the set of all landing spots
+    try {
+        let bounds = Airports.getBounds().extend(GrassStrips.getBounds()).extend(Landables.getBounds());
+        map.fitBounds(bounds);
+        tooltip.setLatLng(bounds.getCenter());
+    }
+    // An error occurred while computing the bounds.  Airports contains only one circle.
+    catch (e) {
+        if (landingSpots.length > 0) {
+            let ls = landingSpots[0];
+            if (ls) {
+                let center = landingSpots[0].circle.getLatLng();
+                map.setView(center, 10);
+                tooltip.setLatLng(center);
             }
         }
+    }
 
-        function feetToMeters(feet) {
-            // one foot is exactly 0.3048 meters
-            return feet * 0.3048;
-        }
+    tooltip.addTo(map);
 
-        function metersToFeet(meters) {
-            return meters / 0.3048;
-        }
+    // Open the layer control to reveal the legend for circle colors.
+    // The control will close the first time it loses focus.
+    $(".leaflet-control-layers").addClass("leaflet-control-layers-expanded");
+}
 
-        // map.on('click', onMapClick);
+// Remove all landing spots before loading a new CUP file
+function removeAllLandingSpots() {
+    // Remove circles from the map
+    for (let ls of landingSpots) {
+        let c = ls.circle;
+        c.removeFrom(Airports);
+        c.removeFrom(GrassStrips);
+        c.removeFrom(Landables);
+    }
 
-        let landingSpots = [];
+    // Remove all landing spots from the array
+    landingSpots.length = 0;
+}
 
-        const myForm = document.getElementById("myForm");
-        const csvFile = document.getElementById("csvFile");
-        const GRASS_SURFACE = 2;
-        const OUTLANDING = 3;
-        const GLIDING_AIRFIELD = 4;
-        const AIRPORT = 5;
-
-        // Loads the CUP file when the "Load File" button is clicked.
-        // Note that the CUP file format is a valid CSV file.
-        myForm.addEventListener('change', loadCupFile);
-        myForm.addEventListener("submit", loadCupFile);
-
-        glideParameters.addEventListener('change', drawLandingSpots);
-
-        function loadCupFile(e) {
-            e.preventDefault();
-
-            glideRatio = parseFloat(document.getElementById('glideRatioInput').value);
-            altitude = parseFloat(document.getElementById('altitudeInput').value);
-            arrivalHeight = parseFloat(document.getElementById('arrivalHeightInput').value);
-
-            const input = csvFile.files[0];
-            const reader = new FileReader();
-
-            let yellowOptions = { color: 'black', fillColor: 'yellow', opacity: 1, fillOpacity: 1 };
-            let blueOptions = { color: 'black', fillColor: 'blue', opacity: 1, fillOpacity: 1 };
-            let greenOptions = { color: 'black', fillColor: 'green', opacity: 1, fillOpacity: 1 };
-
-            reader.onload = function (e) {
-                const allText = e.target.result;
-
-                // delete tasks
-                let taskLocation = allText.indexOf("-----Related Tasks-----");
-
-                // correct taskLocation if string not found, or other error producing NaN or undefined
-                taskLocation = (~taskLocation) ? taskLocation : allText.length;
-
-                // parse the CUP file (which is formatted as a CSV file)
-                let result = $.csv.toObjects(allText.substring(0, taskLocation));
-                console.log(result[0]);
-                console.log(result[result.length - 1]);
-
-                // add landables first
-                for (let row of result) {
-                    if (row.style == OUTLANDING) {
-                        let a = new LandingSpot(row, yellowOptions);
-                        landingSpots.push(a);
-                    }
-                }
-
-                // airports with grass surface will be layered above landable fields
-                for (let row of result) {
-                    if (row.style == GRASS_SURFACE) {
-                        let a = new LandingSpot(row, blueOptions);
-                        landingSpots.push(a);
-                    }
-                }
-
-                // load ordinary airports last so they will be layered above all others
-                for (let row of result) {
-                    if (row.style == GLIDING_AIRFIELD || row.style == AIRPORT) {
-                        let a = new LandingSpot(row, greenOptions);
-                        landingSpots.push(a);
-                    }
-                }
-
-                // Draw the landing spots according to the selected check boxes
-                drawLandingSpots();
-            };
-
-            // Parses an entry in a CUP file.
-            // Will probably die if the file contains tasks.
-            function LandingSpot(csvRecord, options) {
-                this.name = csvRecord.name;
-                this.style = csvRecord.style;
-
-                // Parse elevation
-                if (csvRecord.elev.endsWith("ft")) {
-                    this.elevation = Number(csvRecord.elev.substr(0, csvRecord.elev.length - 2));
-                }
-                else if (csvRecord.elev.endsWith("m")) {
-                    this.elevation = metersToFeet(Number(csvRecord.elev.substr(0, csvRecord.elev.length - 1)));
-                }
-
-                // Parse lattitude
-                let s = csvRecord.lat;
-                let degrees = Number(s.substring(0, 2));
-                let minutes = Number(s.substring(2, 8));
-                let sign = s.endsWith("N") ? 1 : -1;
-                let lat = sign * (degrees + minutes / 60.0);
-
-                // Parse longitude
-                s = csvRecord.lon;
-                degrees = Number(s.substring(0, 3));
-                minutes = Number(s.substring(3, 9));
-                sign = s.endsWith("E") ? 1 : -1;
-                let lon = sign * (degrees + minutes / 60.0);
-
-                this.latLng = L.latLng(lat, lon);
-                let radius = glideRatio * (altitude - arrivalHeight - this.elevation);
-                options.radius = feetToMeters(radius);
-
-                if (isNaN(radius)) {
-                    console.log(this.name + "radius is NaN");
-                }
-                else {
-                    this.circle = L.circle(this.latLng,
-                        options).bindPopup(this.name + "<br>" + this.elevation.toFixed(0) + " ft");
-                }
-            }
-
-            reader.readAsText(input);
-        };
