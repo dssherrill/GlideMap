@@ -488,13 +488,11 @@ function processCupData(allText) {
 
 // Remove all landing spots before loading a new CUP file
 function removeAllLandingSpots() {
-    // Remove circles from the map
-    for (let ls of landingSpots) {
-        let c = ls.circle;
-        c.removeFrom(Airports);
-        c.removeFrom(GrassStrips);
-        c.removeFrom(Landables);
-    }
+    // Clear all layers from feature groups
+    // This removes all circles regardless of whether they're tracked in landingSpots
+    Airports.clearLayers();
+    GrassStrips.clearLayers();
+    Landables.clearLayers();
 
     // Remove all landing spots from the array
     landingSpots.length = 0;
