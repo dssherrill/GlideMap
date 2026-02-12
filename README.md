@@ -48,13 +48,13 @@ Simply visit the [live application](https://dssherrill.github.io/GlideRange.html
 
 ```
 GlideMap/
-├── GlideRange.html              # Main HTML application file
-├── glideRange.js                # Core JavaScript logic
-├── jquery.csv.js                # CSV parsing library for CUP files
-├── Sterling, Massachusetts 2021 SeeYou.cup  # Sample CUP file
-├── LICENSE                      # GNU GPL v3 License
-├── SECURITY_IMPROVEMENTS.md     # Documentation of security enhancements
-└── README.md                    # This file
+├── GlideRange.html                              # Main HTML application file
+├── glideRange.js                                # Core JavaScript logic
+├── jquery.csv.js                                # CSV parsing library for CUP files
+├── Sterling, Massachusetts 2021 SeeYou.cup      # Sample CUP file (note: filename contains spaces)
+├── LICENSE                                      # GNU GPL v3 License
+├── SECURITY_IMPROVEMENTS.md                     # Documentation of security enhancements
+└── README.md                                    # This file
 ```
 
 ## CUP File Format
