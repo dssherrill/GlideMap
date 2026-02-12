@@ -477,10 +477,7 @@ app.layout = html.Div([
     ], className="app-container"),
     
     # Store for landing spots data - load default CUP file on initialization
-    dcc.Store(id='landing-spots-store', data=load_default_cup_file()),
-    
-    # Store for map key to force recentering when data changes
-    dcc.Store(id='map-key-store', data=0)
+    dcc.Store(id='landing-spots-store', data=load_default_cup_file())
 ])
 
 
@@ -510,28 +507,22 @@ def load_cup_file(contents, filename):
 
 
 @callback(
-    Output('map-key-store', 'data'),
-    Input('landing-spots-store', 'data'),
-    State('map-key-store', 'data')
-)
-def update_map_key(landing_spots, current_key):
-    """Increment map key when landing spots change to force map remount"""
-    # Increment counter whenever landing spots change
-    return current_key + 1
-
-
-@callback(
-    Output('map-container', 'children'),
+    Output('map', 'children'),
     [Input('landing-spots-store', 'data'),
      Input('glide-ratio', 'value'),
      Input('altitude', 'value'),
-     Input('arrival-height', 'value')],
-    [State('map-key-store', 'data')]
+     Input('arrival-height', 'value')]
 )
-def update_map(landing_spots, glide_ratio, altitude, arrival_height, map_key):
-    """Update map with landing spots and glide range circles"""
+def update_map_layers(landing_spots, glide_ratio, altitude, arrival_height):
+    """Update map layers with landing spots and glide range circles"""
     if not landing_spots:
-        return no_update
+        # Return just tile layer for empty state
+        return [
+            dl.TileLayer(
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                attribution='&copy; OpenStreetMap contributors'
+            )
+        ]
     
     # Validate inputs
     glide_ratio = max(GLIDE_RATIO_MIN, min(GLIDE_RATIO_MAX, glide_ratio or GLIDE_RATIO_DEFAULT))
@@ -597,109 +588,34 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height, map_key):
             print(f"Error creating marker for {spot.get('name', 'unknown')}: {e}")
             continue
     
-    # Recenter map when landing spots change (not when parameters change)
-    # Also recenter on initial page load when default data is present
-    triggered_id = ctx.triggered_id if ctx.triggered_id else None
-    
-    # Check if this is initial load (no triggered_id) or if landing spots changed
-    if triggered_id is None or triggered_id == 'landing-spots-store':
-        # Calculate new bounds based on landing spots
-        bounds = calculate_map_bounds(landing_spots)
-        
-        # Calculate center and zoom from bounds
-        center, zoom = calculate_center_and_zoom_from_bounds(bounds)
-        
-        # Create a new map container with unique key to force remount
-        # The key is on the div, not the Map itself (Map doesn't support key prop)
-        # This ensures the map recenters even after user has manually panned/zoomed
-        new_map_container = html.Div(
-            key=f"map-container-{map_key}",  # Unique key forces React remount
-            children=[
-                dl.Map(
-                    id="map",
-                    center=center,
-                    zoom=zoom,
-                    style={'width': '100%', 'height': '100%'},  # Fill parent container
-                    children=[
-                        dl.TileLayer(
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        ),
-                        # Layers control with overlay layers as children
-                        dl.LayersControl([
-                            dl.Overlay(
-                                dl.LayerGroup(children=airports_markers),
-                                name='<span style="background: #AAC896; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Airports',
-                                checked=True,
-                                id="airports-layer"
-                            ),
-                            dl.Overlay(
-                                dl.LayerGroup(children=grass_strips_markers),
-                                name='<span style="background: #AAAADC; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Grass Strips',
-                                checked=True,
-                                id="grass-layer"
-                            ),
-                            dl.Overlay(
-                                dl.LayerGroup(children=landables_markers),
-                                name='<span style="background: #E6E696; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Landable Fields',
-                                checked=True,
-                                id="landables-layer"
-                            ),
-                        ], position="topleft", id="layers-control")
-                    ]
-                )
-            ]
-        )
-        
-        return new_map_container
-    else:
-        # When only parameters change, we still recreate the map but with existing key
-        # This updates the circles without recentering the map
-        # Calculate current center from existing data
-        bounds = calculate_map_bounds(landing_spots)
-        center, zoom = calculate_center_and_zoom_from_bounds(bounds)
-        
-        # Use existing map_key so map doesn't remount (preserves user pan/zoom)
-        updated_map_container = html.Div(
-            key=f"map-container-{map_key}",  # Same key, no remount
-            children=[
-                dl.Map(
-                    id="map",
-                    center=center,
-                    zoom=zoom,
-                    style={'width': '100%', 'height': '100%'},
-                    children=[
-                        dl.TileLayer(
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        ),
-                        # Layers control with overlay layers as children
-                        dl.LayersControl([
-                            dl.Overlay(
-                                dl.LayerGroup(children=airports_markers),
-                                name='<span style="background: #AAC896; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Airports',
-                                checked=True,
-                                id="airports-layer"
-                            ),
-                            dl.Overlay(
-                                dl.LayerGroup(children=grass_strips_markers),
-                                name='<span style="background: #AAAADC; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Grass Strips',
-                                checked=True,
-                                id="grass-layer"
-                            ),
-                            dl.Overlay(
-                                dl.LayerGroup(children=landables_markers),
-                                name='<span style="background: #E6E696; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Landable Fields',
-                                checked=True,
-                                id="landables-layer"
-                            ),
-                        ], position="topleft", id="layers-control")
-                    ]
-                )
-            ]
-        )
-        
-        return updated_map_container
+    # Return the map's children (TileLayer and LayersControl)
+    # Map component itself stays static in layout and never remounts
+    return [
+        dl.TileLayer(
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        ),
+        dl.LayersControl([
+            dl.Overlay(
+                dl.LayerGroup(children=airports_markers),
+                name='<span style="background: #AAC896; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Airports',
+                checked=True,
+                id="airports-layer"
+            ),
+            dl.Overlay(
+                dl.LayerGroup(children=grass_strips_markers),
+                name='<span style="background: #AAAADC; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Grass Strips',
+                checked=True,
+                id="grass-layer"
+            ),
+            dl.Overlay(
+                dl.LayerGroup(children=landables_markers),
+                name='<span style="background: #E6E696; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Landable Fields',
+                checked=True,
+                id="landables-layer"
+            ),
+        ], position="topleft", id="layers-control")
+    ]
 
 
 if __name__ == '__main__':
