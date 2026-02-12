@@ -35,6 +35,13 @@ ARRIVAL_HEIGHT_MIN = 0
 ARRIVAL_HEIGHT_MAX = 10000
 ARRIVAL_HEIGHT_DEFAULT = 1000
 
+# Safety factors for arrival height validation
+# If arrival height >= altitude, adjust it to be safe:
+# - Use 90% of altitude as a safety factor
+# - Or ensure at least 100 ft buffer, whichever is smaller
+ARRIVAL_HEIGHT_SAFETY_FACTOR = 0.9
+ARRIVAL_HEIGHT_MIN_BUFFER = 100
+
 # Landing site styles
 GRASS_SURFACE = 2
 OUTLANDING = 3
@@ -337,7 +344,11 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height):
     
     # Ensure arrival height is less than altitude
     if arrival_height >= altitude:
-        arrival_height = max(0, min(altitude * 0.9, altitude - 100))
+        # Apply safety factor: use either 90% of altitude or ensure minimum buffer
+        arrival_height = max(0, min(
+            altitude * ARRIVAL_HEIGHT_SAFETY_FACTOR, 
+            altitude - ARRIVAL_HEIGHT_MIN_BUFFER
+        ))
     
     markers = []
     
