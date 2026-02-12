@@ -6,6 +6,8 @@ A Python Dash Bootstrap version of the Glide Range Map web application. This int
 
 - **Interactive Map Visualization**: Uses Dash Leaflet to display an interactive map with glide range circles
 - **CUP File Support**: Import landing sites from SeeYou CUP files commonly used in soaring
+- **Default CUP File Loading**: Automatically loads Sterling, Massachusetts landing sites on startup
+- **Automatic Map Recentering**: Map automatically centers and zooms to fit loaded landing sites
 - **Real-time Updates**: Map automatically updates when parameters change
 - **Bootstrap UI**: Modern, responsive interface using Dash Bootstrap Components
 - **Customizable Parameters**:
