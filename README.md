@@ -2,19 +2,15 @@
 
 An interactive web-based tool for visualizing glider range based on altitude, glide ratio, and landing site locations. This application helps glider pilots visualize their achievable range from their current position by displaying circles on a map representing potential landing areas.
 
-> **📦 New!** A Python Dash Bootstrap version is now available! See [README_PYTHON.md](README_PYTHON.md) for details.
-
 ## Features
 
-- **Interactive Map Visualization**: Uses Leaflet.js to display an interactive map with glide range circles
-- **CUP File Support**: Import landing sites from SeeYou CUP files commonly used in soaring
-- **Real-time Updates**: Map automatically updates when parameters change
-- **Customizable Parameters**:
+- **Interactive Map Visualization**: interactive map with glide range circles
+- **CUP File Support**: Import landing sites from SeeYou CUP files
+- **Adjustable Parameters**:
   - Glide Ratio (1-100)
   - Altitude MSL in feet (0-50,000 ft)
   - Arrival Height in feet (0-10,000 ft)
-- **Persistent Settings**: All user inputs are saved in local storage and restored on page reload
-- **Location Search**: Built-in geocoding to find and center the map on specific locations
+- **Persistent Settings**: All user inputs are saved in local storage
 - **Landing Site Categories**: Displays airports, grass strips, and landable fields with different markers
 
 ## Demo
@@ -31,7 +27,7 @@ A single-page web application that runs entirely in the browser with no server r
 - **Files:** `GlideRange.html`, `glideRange.js`
 - **See instructions below** for local usage
 
-### 2. Python Dash Bootstrap Version (New!)
+### 2. Python Dash Bootstrap Version
 A modern Python web application with server-side processing and Bootstrap UI.
 - **Use this if:** You prefer Python, want server-side control, or need to integrate with Python tooling
 - **Files:** `app.py`, `requirements.txt`
