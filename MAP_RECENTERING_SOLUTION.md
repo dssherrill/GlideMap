@@ -53,14 +53,28 @@ return markers, center, zoom
 
 ## Current Solution
 
-We use the simple, reliable approach:
+We use the simple, reliable approach with `Output('map', 'center')` and `Output('map', 'zoom')` alongside `Output('map', 'children')`. The callback detects the trigger via `dash.ctx.triggered_id` and only recenters when landing spots data changes (not on glide ratio/altitude/arrival height changes):
+
 ```python
-if triggered_id is None or triggered_id == 'landing-spots-store':
-    bounds = calculate_map_bounds(landing_spots)
-    center, zoom = calculate_center_and_zoom_from_bounds(bounds)
+@callback(
+    [Output('map', 'children'),
+     Output('map', 'center'),
+     Output('map', 'zoom')],
+    [Input('landing-spots-store', 'data'),
+     Input('glide-ratio', 'value'),
+     Input('altitude', 'value'),
+     Input('arrival-height', 'value')]
+)
+def update_map_layers(landing_spots, glide_ratio, altitude, arrival_height):
+    triggered_id = ctx.triggered_id
+    # ... build markers ...
+    if triggered_id is None or triggered_id == 'landing-spots-store':
+        bounds = calculate_map_bounds(landing_spots)
+        center, zoom = calculate_center_and_zoom_from_bounds(bounds)
+    else:
+        center = no_update
+        zoom = no_update
     return markers, center, zoom
-else:
-    return markers, no_update, no_update
 ```
 
 **Advantages**:
@@ -89,6 +103,6 @@ This is an acceptable trade-off for a stable, error-free application.
 
 ## References
 
-- Dash Leaflet documentation: https://dash-leaflet.herokuapp.com/
+- Dash Leaflet documentation: https://dash-leaflet.com
 - Leaflet map state: https://leafletjs.com/reference.html#map-state
 - Dash callbacks: https://dash.plotly.com/basic-callbacks

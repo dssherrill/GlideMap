@@ -21,7 +21,7 @@ This document summarizes the implementation of the Python Dash Bootstrap version
    - Plotly 5.18.0
    - Pandas 2.1.4
    - NumPy 1.26.2
-   - Gunicorn 21.2.0 (for production)
+   - Gunicorn 22.0.0 (for production)
 
 3. **test_app.py**
    - Unit tests for conversion functions

@@ -1,4 +1,4 @@
-# Solution: Force Map Recentering by Component Remounting
+# Solution: Map Recentering via Center/Zoom Outputs
 
 ## The Problem
 
@@ -12,124 +12,83 @@
 
 ## Why Previous Attempts Failed
 
-### Attempt 1: Update center/zoom props directly
+### Attempt 1: Update center/zoom props directly (without trigger detection)
 ```python
 return markers, center, zoom
 ```
-**Result**: Leaflet ignores prop updates after user interaction
+**Result**: Leaflet may ignore prop updates after user interaction if they are sent on every callback.
 
 ### Attempt 2: Use viewport property
 ```python
 viewport = {'center': center, 'zoom': zoom, 'transition': 'flyTo'}
 ```
-**Result**: JavaScript error - breaks the map entirely
-
-### Why These Failed
-Leaflet maintains internal state about user interactions. Simply updating React props doesn't override this state. Leaflet is designed this way to prevent programmatic changes from disrupting user navigation.
+**Result**: JavaScript error - breaks the map entirely.
 
 ## The Working Solution
 
-**Key Insight**: Force React to completely remount the component, creating a fresh Leaflet map instance.
+**Key Insight**: Use `Output('map', 'center')` and `Output('map', 'zoom')` alongside `Output('map', 'children')`, but only send center/zoom updates when landing spot data changes — not when the user adjusts glide parameters.
 
 ### Implementation
 
-1. **Wrap map in a container**:
-```python
-html.Div(
-    id="map-container",
-    children=[dl.Map(...)]
-)
-```
-
-2. **Output entire map component from callback**:
+The callback returns three outputs:
 ```python
 @callback(
-    [Output('landing-spots-layer', 'children'),
-     Output('map-container', 'children')],
-    ...
+    [Output('map', 'children'),
+     Output('map', 'center'),
+     Output('map', 'zoom')],
+    [Input('landing-spots-store', 'data'),
+     Input('glide-ratio', 'value'),
+     Input('altitude', 'value'),
+     Input('arrival-height', 'value')]
 )
-```
+def update_map_layers(landing_spots, glide_ratio, altitude, arrival_height):
+    """Update map layers with landing spots and glide range circles"""
+    # ... build markers list (TileLayer + LayersControl) ...
 
-3. **Create new map when data changes**:
-```python
-if triggered_id is None or triggered_id == 'landing-spots-store':
-    # Data changed - create completely new map
-    new_map = dl.Map(
-        id="map",
-        key=f"map-{map_key}",  # Unique key forces remount
-        center=center,
-        zoom=zoom,
-        children=[
-            dl.TileLayer(...),
-            dl.LayerGroup(id="landing-spots-layer", children=markers)
-        ]
-    )
-    return [], new_map
-else:
-    # Only parameters changed - update markers only
-    return markers, no_update
+    triggered_id = ctx.triggered_id
+    if triggered_id is None or triggered_id == 'landing-spots-store':
+        bounds = calculate_map_bounds(landing_spots)
+        center, zoom = calculate_center_and_zoom_from_bounds(bounds)
+    else:
+        center = no_update
+        zoom = no_update
+
+    return markers, center, zoom
 ```
 
 ### How It Works
 
-**When landing spots change**:
-1. Calculate new center/zoom from bounds
-2. Create entirely new Map component with:
-   - Unique `key` (forces React remount)
-   - New center/zoom values
-   - Markers embedded in LayerGroup
-3. React sees different key → unmounts old map → mounts new map
-4. Fresh Leaflet instance has no user interaction state
-5. Map appears at specified center/zoom
+**When landing spots change** (new CUP file loaded or initial load):
+1. `ctx.triggered_id` is `None` (initial) or `'landing-spots-store'`
+2. Calculate bounds from the new landing spots
+3. Derive center/zoom via `calculate_center_and_zoom_from_bounds(bounds)`
+4. Return markers **plus** the new center and zoom values
+5. Map recenters to show the new data
 
-**When only parameters change** (glide ratio, altitude):
-1. Calculate new circle radii
-2. Update markers in existing LayerGroup
-3. Don't touch map component (preserves user's view)
-4. User's pan/zoom state maintained
-
-## Why This Works
-
-### React's Key Property
-React uses `key` to identify components. When `key` changes:
-1. React unmounts the old component (destroys old Leaflet map)
-2. React mounts a new component (creates new Leaflet map)
-3. New map has no memory of user interactions
-4. New map respects center/zoom props
-
-### Counter-Based Keys
-```python
-# Store tracks counter
-dcc.Store(id='map-key-store', data=0)
-
-# Callback increments on data change
-def update_map_key(landing_spots, current_key):
-    return current_key + 1
-
-# Map uses counter in key
-key=f"map-{map_key}"
-```
-
-Each data change gets unique key: `map-0`, `map-1`, `map-2`, etc.
+**When only parameters change** (glide ratio, altitude, arrival height):
+1. `ctx.triggered_id` is `'glide-ratio'`, `'altitude'`, or `'arrival-height'`
+2. Recalculate circle radii and rebuild markers
+3. Return markers with `no_update` for center and zoom
+4. Map children update but the user's pan/zoom state is preserved
 
 ## Trade-offs
 
 ### Advantages ✅
-- Map reliably recenters after user interaction
+- Map recenters reliably when new data is loaded
 - No JavaScript errors
-- Clean, understandable code
-- Stable behavior
+- No DOM destruction/recreation — smooth transition
+- User's view is preserved when only adjusting parameters
+- Clean, simple callback logic
 
 ### Disadvantages ⚠️
-- Brief flicker when map remounts
-- User loses zoom/pan state when loading new data
-- More expensive (destroys/recreates DOM)
+- After user manually pans/zooms, Leaflet may not always honor
+  programmatic center/zoom updates (standard Leaflet behavior)
 
 ### Why This Is Acceptable
-1. **Remounting only on data change**: Parameters (glide ratio, altitude) still preserve view
-2. **Expected behavior**: When user loads new data, they expect to see it
-3. **Flicker is brief**: Modern browsers remount quickly
-4. **Alternative is worse**: Map stuck on wrong location is confusing
+1. **Selective recentering**: Only triggers on data changes, not parameter tweaks
+2. **Expected behavior**: When users load new data, they expect to see it
+3. **Fallback**: Even if recentering doesn't override a strong user interaction,
+   the circles still update correctly and users can manually pan
 
 ## Testing the Fix
 
@@ -161,20 +120,6 @@ python app.py
 # Follow test scenario above
 ```
 
-## Comparison with JavaScript Version
-
-The original JavaScript/HTML version likely:
-1. Reloads the entire page, or
-2. Uses Leaflet's `flyToBounds()` method directly, or
-3. Also has this issue but wasn't noticed
-
-Dash Leaflet doesn't expose `flyToBounds()` directly, so we use component remounting instead.
-
 ## Conclusion
 
-This solution trades a brief visual flicker for reliable recentering behavior. The flicker is acceptable because:
-- It only happens when loading new data (rare)
-- Users expect to see new data when they load it
-- Alternative (broken recentering) is worse
-
-The implementation is clean, maintainable, and works reliably across all scenarios.
+This solution uses Dash Leaflet's `center` and `zoom` properties as callback outputs, selectively updating them only when new landing spot data is loaded. This provides reliable recentering without DOM remounting overhead, keeping the implementation simple and maintainable.

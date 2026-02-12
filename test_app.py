@@ -9,14 +9,15 @@ import os
 print("Testing imports...")
 try:
     from app import (
-        feet_to_meters, 
-        meters_to_feet, 
+        feet_to_meters,
+        meters_to_feet,
         calculate_radius,
         parse_cup_coordinate,
         parse_cup_elevation,
-        load_default_cup_file,
-        calculate_map_bounds
+        parse_cup_file,
+        calculate_map_bounds,
     )
+
     print("✓ All imports successful")
 except Exception as e:
     print(f"✗ Import error: {e}")
@@ -48,17 +49,28 @@ print(f"✓ Elevation parsing works: {elev_ft}ft, {elev_m:.1f}ft")
 print("\nTesting radius calculation...")
 radius = calculate_radius(20, 3500, 1000, 500)
 expected = feet_to_meters(20 * (3500 - 1000 - 500))
-assert abs(radius - expected) < 0.1, f"Radius calculation failed: got {radius}, expected {expected}"
+assert (
+    abs(radius - expected) < 0.1
+), f"Radius calculation failed: got {radius}, expected {expected}"
 print(f"✓ Radius calculation works: {radius:.1f}m ({radius/1000:.1f}km)")
 
-# Test default CUP file loading
-print("\nTesting default CUP file loading...")
-spots = load_default_cup_file()
-assert len(spots) > 0, "No landing spots loaded from default file"
-assert 'name' in spots[0], "Landing spot missing 'name' field"
-assert 'lat' in spots[0], "Landing spot missing 'lat' field"
-assert 'lon' in spots[0], "Landing spot missing 'lon' field"
-print(f"✓ Default CUP file loading works: loaded {len(spots)} spots")
+# Test CUP file loading with committed fixture
+print("\nTesting CUP file loading with fixture...")
+fixture_path = os.path.join(os.path.dirname(__file__), "vero_beach_test.cup")
+assert os.path.exists(fixture_path), (
+    f"Test fixture missing: {fixture_path}. "
+    "Ensure vero_beach_test.cup is committed to the repository."
+)
+with open(fixture_path, "r", encoding="utf-8") as f:
+    fixture_content = f.read()
+from app import parse_cup_file
+
+spots = parse_cup_file(fixture_content)
+assert len(spots) > 0, "No landing spots loaded from fixture file"
+assert "name" in spots[0], "Landing spot missing 'name' field"
+assert "lat" in spots[0], "Landing spot missing 'lat' field"
+assert "lon" in spots[0], "Landing spot missing 'lon' field"
+print(f"✓ CUP file loading works: loaded {len(spots)} spots from vero_beach_test.cup")
 
 # Test map bounds calculation
 print("\nTesting map bounds calculation...")
@@ -74,8 +86,9 @@ print(f"✓ Map bounds calculation works: SW={bounds[0]}, NE={bounds[1]}")
 # Test app structure
 print("\nTesting app structure...")
 from app import app
+
 assert app is not None, "App not initialized"
-assert hasattr(app, 'layout'), "App has no layout"
+assert hasattr(app, "layout"), "App has no layout"
 print("✓ App structure is valid")
 
 print("\n✅ All tests passed!")
@@ -85,4 +98,3 @@ print("\nThen open http://localhost:8050 in your browser")
 print("\nNew features:")
 print("  - Default CUP file loaded on startup")
 print("  - Map automatically recenters when CUP file is loaded")
-
