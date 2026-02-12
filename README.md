@@ -1,9 +1,7 @@
 # Glide Range Map
 
-An interactive web-based tool for visualizing glider range based on altitude, glide ratio, and landing site locations.
+An app to help glider pilots visualize landing sites within glide range based on altitude, glide ratio, and landing site locations.
 The unshaded area represent no-fly zones.  When planning a task, avoid such areas.
-
-This application helps glider pilots visualize their achievable range from their current position by displaying circles on a map representing potential landing areas.
 
 ## Features
 
@@ -18,7 +16,9 @@ This application helps glider pilots visualize their achievable range from their
 
 ## Demo
 
-You can try the live application at: [https://dssherrill.github.io/GlideRange.html](https://dssherrill.github.io/GlideRange.html)
+You can try the live application at:
+- HTML version: [https://dssherrill.github.io/GlideRange.html](https://dssherrill.github.io/GlideRange.html)
+- Python version: [https://glidemap.up.railway.app](https://glidemap.up.railway.app)
 
 ## Available Versions
 
