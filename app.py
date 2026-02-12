@@ -519,24 +519,29 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height, map_key):
         # Calculate center and zoom from bounds
         center, zoom = calculate_center_and_zoom_from_bounds(bounds)
         
-        # Create a new map with unique key to force remount
+        # Create a new map container with unique key to force remount
+        # The key is on the div, not the Map itself (Map doesn't support key prop)
         # This ensures the map recenters even after user has manually panned/zoomed
-        new_map = dl.Map(
-            id="map",
-            key=f"map-{map_key}",  # Unique key forces React remount
-            center=center,
-            zoom=zoom,
-            style={'width': '100%', 'height': '600px'},
+        new_map_container = html.Div(
+            key=f"map-container-{map_key}",  # Unique key forces React remount
             children=[
-                dl.TileLayer(
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                ),
-                dl.LayerGroup(id="landing-spots-layer", children=markers)
+                dl.Map(
+                    id="map",
+                    center=center,
+                    zoom=zoom,
+                    style={'width': '100%', 'height': '600px'},
+                    children=[
+                        dl.TileLayer(
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        ),
+                        dl.LayerGroup(id="landing-spots-layer", children=markers)
+                    ]
+                )
             ]
         )
         
-        return [], new_map
+        return [], new_map_container
     else:
         # Don't update map when only parameters change, just update markers
         return markers, no_update
