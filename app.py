@@ -19,7 +19,8 @@ If not, see https://www.gnu.org/licenses/.
 import base64
 import io
 import re
-from dash import Dash, html, dcc, Input, Output, State, callback
+import os
+from dash import Dash, html, dcc, Input, Output, State, callback, no_update, ctx
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import pandas as pd
@@ -104,9 +105,13 @@ def parse_cup_file(contents):
     name,code,country,lat,lon,elev,style,rwdir,rwlen,freq,desc
     0    1    2       3   4   5    6     7     8     9    10
     """
-    # Decode base64 content
-    content_type, content_string = contents.split(',')
-    decoded = base64.b64decode(content_string).decode('utf-8')
+    # Decode base64 content if it's a data URL (starts with data:)
+    if contents.startswith('data:'):
+        content_type, content_string = contents.split(',', 1)
+        decoded = base64.b64decode(content_string).decode('utf-8')
+    else:
+        # Plain text content (for local file loading)
+        decoded = contents
     
     # Remove tasks section if present
     task_location = decoded.find("-----Related Tasks-----")
@@ -156,6 +161,64 @@ def parse_cup_file(contents):
             continue
     
     return landing_spots
+
+
+def load_default_cup_file():
+    """Load the default CUP file on startup"""
+    default_cup_path = 'Sterling, Massachusetts 2021 SeeYou.cup'
+    try:
+        if os.path.exists(default_cup_path):
+            with open(default_cup_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                return parse_cup_file(content)
+    except Exception as e:
+        print(f"Error loading default CUP file: {e}")
+    return []
+
+
+def calculate_map_bounds(landing_spots):
+    """
+    Calculate map center and zoom level from landing spots
+    Returns (center, zoom) tuple
+    """
+    if not landing_spots:
+        return default_center, 9
+    
+    # Find min/max coordinates
+    lats = [spot['lat'] for spot in landing_spots]
+    lons = [spot['lon'] for spot in landing_spots]
+    
+    min_lat, max_lat = min(lats), max(lats)
+    min_lon, max_lon = min(lons), max(lons)
+    
+    # Calculate center
+    center_lat = (min_lat + max_lat) / 2
+    center_lon = (min_lon + max_lon) / 2
+    center = [center_lat, center_lon]
+    
+    # Calculate appropriate zoom level based on bounds
+    # This is a simplified calculation - Leaflet's fitBounds is more sophisticated
+    lat_diff = max_lat - min_lat
+    lon_diff = max_lon - min_lon
+    max_diff = max(lat_diff, lon_diff)
+    
+    # Rough zoom level calculation
+    if max_diff > 10:
+        zoom = 6
+    elif max_diff > 5:
+        zoom = 7
+    elif max_diff > 2:
+        zoom = 8
+    elif max_diff > 1:
+        zoom = 9
+    elif max_diff > 0.5:
+        zoom = 10
+    elif max_diff > 0.2:
+        zoom = 11
+    else:
+        zoom = 12
+    
+    return center, zoom
 
 
 # Initialize the Dash app with Bootstrap theme
@@ -295,8 +358,8 @@ app.layout = dbc.Container([
         ])
     ]),
     
-    # Store for landing spots data
-    dcc.Store(id='landing-spots-store', data=[])
+    # Store for landing spots data - load default CUP file on initialization
+    dcc.Store(id='landing-spots-store', data=load_default_cup_file())
 ], fluid=True, className="py-4")
 
 
@@ -309,8 +372,8 @@ app.layout = dbc.Container([
 def load_cup_file(contents, filename):
     """Load and parse a CUP file"""
     if contents is None:
-        # Load default file on startup (empty for now, can be added)
-        return [], ""
+        # Don't update when no file is uploaded (default data is already loaded in Store)
+        return no_update, no_update
     
     try:
         landing_spots = parse_cup_file(contents)
@@ -326,7 +389,9 @@ def load_cup_file(contents, filename):
 
 
 @callback(
-    Output('landing-spots-layer', 'children'),
+    [Output('landing-spots-layer', 'children'),
+     Output('map', 'center'),
+     Output('map', 'zoom')],
     [Input('landing-spots-store', 'data'),
      Input('glide-ratio', 'value'),
      Input('altitude', 'value'),
@@ -335,7 +400,7 @@ def load_cup_file(contents, filename):
 def update_map(landing_spots, glide_ratio, altitude, arrival_height):
     """Update map with landing spots and glide range circles"""
     if not landing_spots:
-        return []
+        return [], no_update, no_update
     
     # Validate inputs
     glide_ratio = max(GLIDE_RATIO_MIN, min(GLIDE_RATIO_MAX, glide_ratio or GLIDE_RATIO_DEFAULT))
@@ -390,7 +455,15 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height):
             print(f"Error creating marker for {spot.get('name', 'unknown')}: {e}")
             continue
     
-    return markers
+    # Recenter map only when landing spots change (not when parameters change)
+    triggered_id = ctx.triggered_id if ctx.triggered_id else None
+    if triggered_id == 'landing-spots-store':
+        # Calculate new center and zoom based on landing spots
+        center, zoom = calculate_map_bounds(landing_spots)
+        return markers, center, zoom
+    else:
+        # Don't update center/zoom when only parameters change
+        return markers, no_update, no_update
 
 
 if __name__ == '__main__':

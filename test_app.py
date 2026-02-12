@@ -13,7 +13,9 @@ try:
         meters_to_feet, 
         calculate_radius,
         parse_cup_coordinate,
-        parse_cup_elevation
+        parse_cup_elevation,
+        load_default_cup_file,
+        calculate_map_bounds
     )
     print("✓ All imports successful")
 except Exception as e:
@@ -49,6 +51,23 @@ expected = feet_to_meters(20 * (3500 - 1000 - 500))
 assert abs(radius - expected) < 0.1, f"Radius calculation failed: got {radius}, expected {expected}"
 print(f"✓ Radius calculation works: {radius:.1f}m ({radius/1000:.1f}km)")
 
+# Test default CUP file loading
+print("\nTesting default CUP file loading...")
+spots = load_default_cup_file()
+assert len(spots) > 0, "No landing spots loaded from default file"
+assert 'name' in spots[0], "Landing spot missing 'name' field"
+assert 'lat' in spots[0], "Landing spot missing 'lat' field"
+assert 'lon' in spots[0], "Landing spot missing 'lon' field"
+print(f"✓ Default CUP file loading works: loaded {len(spots)} spots")
+
+# Test map bounds calculation
+print("\nTesting map bounds calculation...")
+center, zoom = calculate_map_bounds(spots)
+assert isinstance(center, list) and len(center) == 2, "Center should be [lat, lon]"
+assert isinstance(zoom, int), "Zoom should be an integer"
+assert 1 <= zoom <= 18, f"Zoom should be between 1 and 18, got {zoom}"
+print(f"✓ Map bounds calculation works: center={center}, zoom={zoom}")
+
 # Test app structure
 print("\nTesting app structure...")
 from app import app
@@ -60,3 +79,7 @@ print("\n✅ All tests passed!")
 print("\nTo run the application:")
 print("  python app.py")
 print("\nThen open http://localhost:8050 in your browser")
+print("\nNew features:")
+print("  • Default CUP file loaded on startup")
+print("  • Map automatically recenters when CUP file is loaded")
+
