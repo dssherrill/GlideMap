@@ -11,9 +11,9 @@ This document explains how to configure the GlideMap application, including how 
 
 ### Where is the Mapbox Token Stored?
 
-The Mapbox API access token is currently stored directly in the `glideRange.js` file at **line 234**.
+The Mapbox API access token is stored in the `glideRange.js` file in the **MAPBOX CONFIGURATION** section.
 
-**Location:** `/glideRange.js` (line 234)
+**Location:** `/glideRange.js` (look for the comment `// MAPBOX CONFIGURATION`)
 
 ```javascript
 let tiles = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=YOUR_TOKEN_HERE', {
@@ -33,7 +33,7 @@ To update the Mapbox API access token:
 
 2. **Update the Token in the Code:**
    - Open the `glideRange.js` file in a text editor
-   - Navigate to line 234 (or search for `access_token=`)
+   - Find the `// MAPBOX CONFIGURATION` comment section (or search for `access_token=`)
    - Replace the existing token with your new token:
      ```javascript
      let tiles = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.YOUR_NEW_TOKEN_HERE', {
@@ -78,13 +78,9 @@ The application loads a default CUP file on startup: `Sterling, Massachusetts 20
 To change which CUP file loads by default:
 
 1. Open `glideRange.js`
-2. Find the initialization code (around line 635-645)
-3. Look for:
-   ```javascript
-   fetch('Sterling, Massachusetts 2021 SeeYou.cup')
-   ```
-4. Replace the filename with your desired CUP file
-5. Ensure the new CUP file is in the same directory as `GlideRange.html`
+2. Find the initialization code (search for `fetch('Sterling, Massachusetts 2021 SeeYou.cup')`)
+3. Replace the filename with your desired CUP file
+4. Ensure the new CUP file is in the same directory as `GlideRange.html`
 
 ## Map Settings
 
@@ -92,7 +88,7 @@ You can customize various map settings in `glideRange.js`:
 
 ### Map Style
 
-To change the Mapbox map style (line 238):
+To change the Mapbox map style (in the tile layer configuration's `id` property):
 ```javascript
 id: 'mapbox/streets-v11',  // Change to: satellite-v9, outdoors-v11, light-v10, dark-v10
 ```
@@ -106,21 +102,21 @@ Available Mapbox styles:
 
 ### Maximum Zoom Level
 
-Change the maximum zoom level (line 235):
+Change the maximum zoom level (in the tile layer configuration's `maxZoom` property):
 ```javascript
 maxZoom: 18,  // Range: 0-22 (higher = more detailed)
 ```
 
 ### Initial Map View
 
-Set the default map center and zoom (around lines 215-220):
+Set the default map center and zoom (in the map initialization code where `L.map` is created):
 ```javascript
 let map = L.map('map').setView([42.3601, -71.0589], 8);  // [latitude, longitude], zoom
 ```
 
 ### Default Glide Parameters
 
-Default values are defined at the top of `glideRange.js` (lines 1-11):
+Default values are defined at the top of `glideRange.js` (in the constants section):
 ```javascript
 const GLIDE_RATIO_DEFAULT = 20;        // Default glide ratio
 const ALTITUDE_DEFAULT = 3500;         // Default altitude MSL in feet
