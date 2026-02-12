@@ -44,6 +44,20 @@ Simply visit the [live application](https://dssherrill.github.io/GlideRange.html
 
 5. The map will display circles showing your glide range to each landing site
 
+## Configuration
+
+### Mapbox API Token
+
+The application uses Mapbox for map tiles. The API access token is stored in `glideRange.js` in the **MAPBOX CONFIGURATION** section.
+
+**To update the Mapbox token:**
+1. Obtain a token from [Mapbox](https://account.mapbox.com/)
+2. Edit `glideRange.js` and find the `// MAPBOX CONFIGURATION` comment
+3. Replace the token in the URL parameter `access_token=YOUR_TOKEN`
+4. Save and reload the application
+
+**For detailed configuration instructions**, including token security best practices and other customization options, see [CONFIGURATION.md](CONFIGURATION.md).
+
 ## File Structure
 
 ```
@@ -58,6 +72,7 @@ GlideMap/
 ├── LICENSE                                          # GNU GPL v3 License
 ├── SECURITY_IMPROVEMENTS.md                         # Documentation of security enhancements
 ├── DEPLOYMENT.md                                    # Deployment guide and instructions
+├── CONFIGURATION.md                                 # Configuration guide (Mapbox token, settings)
 └── README.md                                        # This file
 ```
 
