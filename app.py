@@ -454,7 +454,11 @@ app.layout = html.Div([
                                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                                 ),
-                                dl.LayerGroup(id="landing-spots-layer")
+                                # Layers control - initially empty, populated by callback
+                                dl.LayersControl(
+                                    position="topleft",
+                                    id="layers-control"
+                                )
                             ]
                         )
                     ],
@@ -517,8 +521,7 @@ def update_map_key(landing_spots, current_key):
 
 
 @callback(
-    [Output('landing-spots-layer', 'children'),
-     Output('map-container', 'children')],
+    Output('map-container', 'children'),
     [Input('landing-spots-store', 'data'),
      Input('glide-ratio', 'value'),
      Input('altitude', 'value'),
@@ -528,7 +531,7 @@ def update_map_key(landing_spots, current_key):
 def update_map(landing_spots, glide_ratio, altitude, arrival_height, map_key):
     """Update map with landing spots and glide range circles"""
     if not landing_spots:
-        return [], no_update
+        return no_update
     
     # Validate inputs
     glide_ratio = max(GLIDE_RATIO_MIN, min(GLIDE_RATIO_MAX, glide_ratio or GLIDE_RATIO_DEFAULT))
@@ -543,14 +546,17 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height, map_key):
             altitude - ARRIVAL_HEIGHT_MIN_BUFFER
         ))
     
-    markers = []
+    # Create separate layer groups for different landing site types
+    airports_markers = []
+    grass_strips_markers = []
+    landables_markers = []
     
-    # Color mapping for different landing site types
+    # Color mapping for different landing site types (matching JavaScript version)
     style_colors = {
-        AIRPORT: 'green',
-        GLIDING_AIRFIELD: 'green',
-        GRASS_SURFACE: 'blue',
-        OUTLANDING: 'yellow'
+        AIRPORT: '#AAC896',           # Green for airports
+        GLIDING_AIRFIELD: '#AAC896',  # Green for gliding airfields
+        GRASS_SURFACE: '#AAAADC',     # Blue for grass strips
+        OUTLANDING: '#E6E696'         # Yellow for landable fields
     }
     
     for spot in landing_spots:
@@ -578,7 +584,15 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height, map_key):
                     )
                 ]
             )
-            markers.append(circle)
+            
+            # Add to appropriate layer based on style
+            if spot['style'] in [AIRPORT, GLIDING_AIRFIELD]:
+                airports_markers.append(circle)
+            elif spot['style'] == GRASS_SURFACE:
+                grass_strips_markers.append(circle)
+            elif spot['style'] == OUTLANDING:
+                landables_markers.append(circle)
+                
         except Exception as e:
             print(f"Error creating marker for {spot.get('name', 'unknown')}: {e}")
             continue
@@ -605,22 +619,93 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height, map_key):
                     id="map",
                     center=center,
                     zoom=zoom,
-                    style={'width': '100%', 'height': '600px'},
+                    style={'width': '100%', 'height': '100%'},  # Fill parent container
                     children=[
                         dl.TileLayer(
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         ),
-                        dl.LayerGroup(id="landing-spots-layer", children=markers)
+                        # Separate overlay layers for each landing spot type
+                        dl.Overlay(
+                            dl.LayerGroup(children=airports_markers),
+                            name='<span style="background: #AAC896; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Airports',
+                            checked=True,
+                            id="airports-layer"
+                        ),
+                        dl.Overlay(
+                            dl.LayerGroup(children=grass_strips_markers),
+                            name='<span style="background: #AAAADC; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Grass Strips',
+                            checked=True,
+                            id="grass-layer"
+                        ),
+                        dl.Overlay(
+                            dl.LayerGroup(children=landables_markers),
+                            name='<span style="background: #E6E696; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Landable Fields',
+                            checked=True,
+                            id="landables-layer"
+                        ),
+                        # Layers control positioned at top-left
+                        dl.LayersControl(
+                            position="topleft",
+                            id="layers-control"
+                        )
                     ]
                 )
             ]
         )
         
-        return [], new_map_container
+        return new_map_container
     else:
-        # Don't update map when only parameters change, just update markers
-        return markers, no_update
+        # When only parameters change, we still recreate the map but with existing key
+        # This updates the circles without recentering the map
+        # Calculate current center from existing data
+        bounds = calculate_map_bounds(landing_spots)
+        center, zoom = calculate_center_and_zoom_from_bounds(bounds)
+        
+        # Use existing map_key so map doesn't remount (preserves user pan/zoom)
+        updated_map_container = html.Div(
+            key=f"map-container-{map_key}",  # Same key, no remount
+            children=[
+                dl.Map(
+                    id="map",
+                    center=center,
+                    zoom=zoom,
+                    style={'width': '100%', 'height': '100%'},
+                    children=[
+                        dl.TileLayer(
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        ),
+                        # Separate overlay layers for each landing spot type
+                        dl.Overlay(
+                            dl.LayerGroup(children=airports_markers),
+                            name='<span style="background: #AAC896; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Airports',
+                            checked=True,
+                            id="airports-layer"
+                        ),
+                        dl.Overlay(
+                            dl.LayerGroup(children=grass_strips_markers),
+                            name='<span style="background: #AAAADC; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Grass Strips',
+                            checked=True,
+                            id="grass-layer"
+                        ),
+                        dl.Overlay(
+                            dl.LayerGroup(children=landables_markers),
+                            name='<span style="background: #E6E696; width: 10px; height: 10px; display: inline-block; margin-right: 5px;"></span>Landable Fields',
+                            checked=True,
+                            id="landables-layer"
+                        ),
+                        # Layers control positioned at top-left
+                        dl.LayersControl(
+                            position="topleft",
+                            id="layers-control"
+                        )
+                    ]
+                )
+            ]
+        )
+        
+        return updated_map_container
 
 
 if __name__ == '__main__':
