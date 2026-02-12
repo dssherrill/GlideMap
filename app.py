@@ -49,6 +49,19 @@ OUTLANDING = 3
 GLIDING_AIRFIELD = 4
 AIRPORT = 5
 
+# Default CUP file path
+DEFAULT_CUP_FILE_PATH = 'Sterling, Massachusetts 2021 SeeYou.cup'
+
+# Zoom level calculation constants
+# Maps coordinate difference (degrees) to appropriate zoom level
+ZOOM_LEVEL_10_DEG = 6   # > 10 degrees difference
+ZOOM_LEVEL_5_DEG = 7    # > 5 degrees difference
+ZOOM_LEVEL_2_DEG = 8    # > 2 degrees difference
+ZOOM_LEVEL_1_DEG = 9    # > 1 degree difference
+ZOOM_LEVEL_0_5_DEG = 10 # > 0.5 degrees difference
+ZOOM_LEVEL_0_2_DEG = 11 # > 0.2 degrees difference
+ZOOM_LEVEL_DEFAULT = 12 # <= 0.2 degrees difference
+
 
 def feet_to_meters(feet):
     """Convert feet to meters"""
@@ -105,13 +118,16 @@ def parse_cup_file(contents):
     name,code,country,lat,lon,elev,style,rwdir,rwlen,freq,desc
     0    1    2       3   4   5    6     7     8     9    10
     """
-    # Decode base64 content if it's a data URL (starts with data:)
-    if contents.startswith('data:'):
-        content_type, content_string = contents.split(',', 1)
-        decoded = base64.b64decode(content_string).decode('utf-8')
-    else:
-        # Plain text content (for local file loading)
-        decoded = contents
+    try:
+        # Decode base64 content if it's a data URL (starts with data:)
+        if contents.startswith('data:'):
+            content_type, content_string = contents.split(',', 1)
+            decoded = base64.b64decode(content_string).decode('utf-8')
+        else:
+            # Plain text content (for local file loading)
+            decoded = contents
+    except (ValueError, AttributeError) as e:
+        raise ValueError(f"Invalid CUP file format. Expected 'data:' URL or plain text content: {e}")
     
     # Remove tasks section if present
     task_location = decoded.find("-----Related Tasks-----")
@@ -165,10 +181,9 @@ def parse_cup_file(contents):
 
 def load_default_cup_file():
     """Load the default CUP file on startup"""
-    default_cup_path = 'Sterling, Massachusetts 2021 SeeYou.cup'
     try:
-        if os.path.exists(default_cup_path):
-            with open(default_cup_path, 'r', encoding='utf-8') as f:
+        if os.path.exists(DEFAULT_CUP_FILE_PATH):
+            with open(DEFAULT_CUP_FILE_PATH, 'r', encoding='utf-8') as f:
                 content = f.read()
                 return parse_cup_file(content)
     except Exception as e:
@@ -202,21 +217,21 @@ def calculate_map_bounds(landing_spots):
     lon_diff = max_lon - min_lon
     max_diff = max(lat_diff, lon_diff)
     
-    # Rough zoom level calculation
+    # Map coordinate difference to zoom level
     if max_diff > 10:
-        zoom = 6
+        zoom = ZOOM_LEVEL_10_DEG
     elif max_diff > 5:
-        zoom = 7
+        zoom = ZOOM_LEVEL_5_DEG
     elif max_diff > 2:
-        zoom = 8
+        zoom = ZOOM_LEVEL_2_DEG
     elif max_diff > 1:
-        zoom = 9
+        zoom = ZOOM_LEVEL_1_DEG
     elif max_diff > 0.5:
-        zoom = 10
+        zoom = ZOOM_LEVEL_0_5_DEG
     elif max_diff > 0.2:
-        zoom = 11
+        zoom = ZOOM_LEVEL_0_2_DEG
     else:
-        zoom = 12
+        zoom = ZOOM_LEVEL_DEFAULT
     
     return center, zoom
 

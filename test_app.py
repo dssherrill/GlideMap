@@ -80,6 +80,6 @@ print("\nTo run the application:")
 print("  python app.py")
 print("\nThen open http://localhost:8050 in your browser")
 print("\nNew features:")
-print("  • Default CUP file loaded on startup")
-print("  • Map automatically recenters when CUP file is loaded")
+print("  - Default CUP file loaded on startup")
+print("  - Map automatically recenters when CUP file is loaded")
 
