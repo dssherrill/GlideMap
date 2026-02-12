@@ -154,6 +154,9 @@ def parse_cup_file(contents):
 # Initialize the Dash app with Bootstrap theme
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
+# Expose the Flask server for production deployment (gunicorn, etc.)
+server = app.server
+
 # Default landing spots (Sterling, Massachusetts area)
 default_center = [42.426, -71.793]
 

@@ -89,9 +89,13 @@ The circles help visualize which landing sites are within gliding distance based
 GlideMap/
 ├── app.py                                        # Main Python Dash application
 ├── requirements.txt                              # Python dependencies
+├── Dockerfile                                    # Docker configuration
+├── .dockerignore                                 # Docker ignore file
 ├── .gitignore                                    # Git ignore file for Python
+├── test_app.py                                   # Unit tests
 ├── Sterling, Massachusetts 2021 SeeYou.cup       # Sample CUP file
 ├── README_PYTHON.md                              # This file
+├── QUICKSTART.md                                 # Quick start guide
 └── [Original JavaScript/HTML files...]           # Original web app files
 ```
 
@@ -141,9 +145,9 @@ For production deployment, consider using:
 
 - **Gunicorn** (Linux/Mac):
   ```bash
-  pip install gunicorn
   gunicorn app:server -b 0.0.0.0:8050
   ```
+  Note: Gunicorn is already included in requirements.txt
 
 - **Waitress** (Windows-friendly):
   ```bash
@@ -151,8 +155,20 @@ For production deployment, consider using:
   waitress-serve --host=0.0.0.0 --port=8050 app:server
   ```
 
-- **Docker**: Create a Dockerfile for containerized deployment
+- **Docker**: A Dockerfile is included in the repository
+  ```bash
+  # Build the image
+  docker build -t glidemap-dash .
+  
+  # Run the container
+  docker run -p 8050:8050 glidemap-dash
+  ```
+
 - **Cloud Platforms**: Deploy to Heroku, AWS, Azure, or Google Cloud
+  - The included `Dockerfile` makes deployment easy on any container platform
+  - For Heroku, use the Heroku Python buildpack
+  - For AWS, use Elastic Beanstalk or ECS
+  - For Azure, use App Service or Container Instances
 
 ## Browser Compatibility
 
