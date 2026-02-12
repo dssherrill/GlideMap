@@ -260,149 +260,213 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 # Expose the Flask server for production deployment (gunicorn, etc.)
 server = app.server
 
+# Add custom CSS for full-height layout via index_string
+app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+            .app-container {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+            }
+            .header-section {
+                padding: 1rem;
+                background-color: #f8f9fa;
+                border-bottom: 1px solid #dee2e6;
+            }
+            .content-section {
+                display: flex;
+                flex: 1;
+                overflow: hidden;
+            }
+            .sidebar {
+                width: 350px;
+                overflow-y: auto;
+                padding: 1rem;
+                background-color: #ffffff;
+                border-right: 1px solid #dee2e6;
+            }
+            .map-section {
+                flex: 1;
+                position: relative;
+                overflow: hidden;
+            }
+            .instructions-overlay {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 1000;
+                max-width: 400px;
+                width: 90%;
+            }
+            .footer-section {
+                padding: 0.5rem;
+                background-color: #f8f9fa;
+                border-top: 1px solid #dee2e6;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
+
 # Default landing spots (Sterling, Massachusetts area)
 default_center = [42.426, -71.793]
 
-# App layout
-app.layout = dbc.Container([
-    dbc.Row([
-        dbc.Col([
-            html.H1("Glide Range Map", className="text-center mb-4"),
+# App layout with full-height map and sidebar controls
+app.layout = html.Div([
+    html.Div([
+        # Header
+        html.Div([
+            html.H2("Glide Range Map", className="mb-1"),
             html.P(
-                "Interactive visualization of glider range based on altitude, glide ratio, and landing sites",
-                className="text-center text-muted mb-4"
+                "Interactive visualization of glider range",
+                className="text-muted mb-0",
+                style={'fontSize': '0.9rem'}
             )
-        ])
-    ]),
-    
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("Glide Parameters", className="card-title"),
-                    
-                    dbc.Row([
-                        dbc.Col([
-                            dbc.Label("Glide Ratio", html_for="glide-ratio"),
-                            dbc.Input(
-                                id="glide-ratio",
-                                type="number",
-                                min=GLIDE_RATIO_MIN,
-                                max=GLIDE_RATIO_MAX,
-                                step=0.1,
-                                value=GLIDE_RATIO_DEFAULT,
-                            ),
-                            dbc.FormText("Glider's glide ratio (e.g., 20:1, 30:1)")
-                        ], md=4),
+        ], className="header-section"),
+        
+        # Main content area with sidebar and map
+        html.Div([
+            # Left sidebar with controls
+            html.Div([
+                dbc.Card([
+                    dbc.CardBody([
+                        html.H5("Glide Parameters", className="card-title mb-3"),
                         
-                        dbc.Col([
-                            dbc.Label("Altitude MSL (ft)", html_for="altitude"),
-                            dbc.Input(
-                                id="altitude",
-                                type="number",
-                                min=ALTITUDE_MIN,
-                                max=ALTITUDE_MAX,
-                                step=100,
-                                value=ALTITUDE_DEFAULT,
-                            ),
-                            dbc.FormText("Current altitude above sea level")
-                        ], md=4),
-                        
-                        dbc.Col([
-                            dbc.Label("Arrival Height (ft)", html_for="arrival-height"),
-                            dbc.Input(
-                                id="arrival-height",
-                                type="number",
-                                min=ARRIVAL_HEIGHT_MIN,
-                                max=ARRIVAL_HEIGHT_MAX,
-                                step=100,
-                                value=ARRIVAL_HEIGHT_DEFAULT,
-                            ),
-                            dbc.FormText("Minimum safe arrival height")
-                        ], md=4),
-                    ]),
-                    
-                    html.Hr(),
-                    
-                    html.H5("Load CUP File", className="card-title mt-3"),
-                    dcc.Upload(
-                        id='upload-cup',
-                        children=dbc.Button(
-                            "Upload CUP File",
-                            color="primary",
-                            className="mb-2"
+                        dbc.Label("Glide Ratio", html_for="glide-ratio", className="mt-2"),
+                        dbc.Input(
+                            id="glide-ratio",
+                            type="number",
+                            min=GLIDE_RATIO_MIN,
+                            max=GLIDE_RATIO_MAX,
+                            step=0.1,
+                            value=GLIDE_RATIO_DEFAULT,
+                            className="mb-1"
                         ),
-                        multiple=False,
-                        style={'display': 'inline-block'}
-                    ),
-                    html.Div(id='upload-status', className="text-muted"),
+                        dbc.FormText("Glider's glide ratio (e.g., 20:1)", className="mb-3"),
+                        
+                        dbc.Label("Altitude MSL (ft)", html_for="altitude", className="mt-2"),
+                        dbc.Input(
+                            id="altitude",
+                            type="number",
+                            min=ALTITUDE_MIN,
+                            max=ALTITUDE_MAX,
+                            step=100,
+                            value=ALTITUDE_DEFAULT,
+                            className="mb-1"
+                        ),
+                        dbc.FormText("Current altitude above sea level", className="mb-3"),
+                        
+                        dbc.Label("Arrival Height (ft)", html_for="arrival-height", className="mt-2"),
+                        dbc.Input(
+                            id="arrival-height",
+                            type="number",
+                            min=ARRIVAL_HEIGHT_MIN,
+                            max=ARRIVAL_HEIGHT_MAX,
+                            step=100,
+                            value=ARRIVAL_HEIGHT_DEFAULT,
+                            className="mb-1"
+                        ),
+                        dbc.FormText("Minimum safe arrival height", className="mb-3"),
+                        
+                        html.Hr(),
+                        
+                        html.H5("Load CUP File", className="card-title mt-3 mb-3"),
+                        dcc.Upload(
+                            id='upload-cup',
+                            children=dbc.Button(
+                                "Upload CUP File",
+                                color="primary",
+                                className="mb-2",
+                                style={'width': '100%'}
+                            ),
+                            multiple=False,
+                            style={'display': 'block'}
+                        ),
+                        html.Div(id='upload-status', className="text-muted small"),
+                    ])
                 ])
-            ])
-        ], md=12, className="mb-4")
-    ]),
-    
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("Map", className="card-title"),
+            ], className="sidebar"),
+            
+            # Right side - Map
+            html.Div([
+                # Instructions overlay (centered on map)
+                html.Div([
                     dbc.Alert(
                         [
-                            html.Strong("NOTICE: The range circles ignore blocking terrain"),
+                            html.Strong("Quick Guide", className="d-block mb-2"),
                             html.Ul([
-                                html.Li("Green circles: Airports and gliding airfields"),
-                                html.Li("Blue circles: Grass strips"),
-                                html.Li("Yellow circles: Landable fields"),
-                                html.Li("Adjust the soaring parameters above"),
-                                html.Li("Upload your own CUP file (optional)"),
-                            ])
+                                html.Li("Green: Airports/airfields", className="small"),
+                                html.Li("Blue: Grass strips", className="small"),
+                                html.Li("Yellow: Landable fields", className="small"),
+                            ], className="mb-2", style={'paddingLeft': '1.2rem'}),
+                            html.P("Adjust parameters on the left. Range circles ignore terrain.", className="small mb-0")
                         ],
                         color="info",
                         dismissable=True,
-                        className="mb-3"
-                    ),
-                    html.Div(
-                        id="map-container",
-                        children=[
-                            dl.Map(
-                                id="map",
-                                center=default_center,
-                                zoom=9,
-                                style={'width': '100%', 'height': '600px'},
-                                children=[
-                                    dl.TileLayer(
-                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                                    ),
-                                    dl.LayerGroup(id="landing-spots-layer")
-                                ]
-                            )
-                        ]
+                        className="shadow"
                     )
-                ])
-            ])
-        ], md=12)
-    ]),
-    
-    dbc.Row([
-        dbc.Col([
-            html.Hr(),
-            html.Footer([
-                html.P([
-                    "Glide Range Map - Python Dash Bootstrap Version | ",
-                    "Contact: glide@sherrill.in | ",
-                    html.A("GitHub Repository", href="https://github.com/dssherrill/GlideMap", target="_blank")
-                ], className="text-center text-muted")
-            ])
-        ])
-    ]),
+                ], className="instructions-overlay"),
+                
+                # Map container
+                html.Div(
+                    id="map-container",
+                    children=[
+                        dl.Map(
+                            id="map",
+                            center=default_center,
+                            zoom=9,
+                            style={'width': '100%', 'height': '100%'},
+                            children=[
+                                dl.TileLayer(
+                                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                ),
+                                dl.LayerGroup(id="landing-spots-layer")
+                            ]
+                        )
+                    ],
+                    style={'width': '100%', 'height': '100%'}
+                )
+            ], className="map-section"),
+        ], className="content-section"),
+        
+        # Footer
+        html.Div([
+            html.Small([
+                "Glide Range Map | ",
+                html.A("GitHub", href="https://github.com/dssherrill/GlideMap", target="_blank")
+            ], className="text-muted")
+        ], className="footer-section"),
+    ], className="app-container"),
     
     # Store for landing spots data - load default CUP file on initialization
     dcc.Store(id='landing-spots-store', data=load_default_cup_file()),
     
     # Store for map key to force recentering when data changes
     dcc.Store(id='map-key-store', data=0)
-], fluid=True, className="py-4")
+])
 
 
 @callback(
@@ -549,4 +613,4 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height, map_key):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0', port=8050)
+    app.run(debug=True, host='0.0.0.0', port=8050)
