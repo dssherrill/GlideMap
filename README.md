@@ -1,6 +1,9 @@
 # Glide Range Map
 
-An interactive web-based tool for visualizing glider range based on altitude, glide ratio, and landing site locations. This application helps glider pilots visualize their achievable range from their current position by displaying circles on a map representing potential landing areas.
+An interactive web-based tool for visualizing glider range based on altitude, glide ratio, and landing site locations.
+The unshaded area represent no-fly zones.  When planning a task, avoid such areas.
+
+This application helps glider pilots visualize their achievable range from their current position by displaying circles on a map representing potential landing areas.
 
 ## Features
 
@@ -127,6 +130,7 @@ The application calculates the glide range for each landing site using the follo
 4. Displays a circle on the map with radius equal to the calculated range
 
 The circles help visualize which landing sites are within gliding distance based on your current position and altitude.
+More importantly, the unshaded area represent no-fly zones.  When planning a task, route yourself around such areas.
 
 ## Security Features
 
