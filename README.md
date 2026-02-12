@@ -2,6 +2,8 @@
 
 An interactive web-based tool for visualizing glider range based on altitude, glide ratio, and landing site locations. This application helps glider pilots visualize their achievable range from their current position by displaying circles on a map representing potential landing areas.
 
+> **📦 New!** A Python Dash Bootstrap version is now available! See [README_PYTHON.md](README_PYTHON.md) for details.
+
 ## Features
 
 - **Interactive Map Visualization**: Uses Leaflet.js to display an interactive map with glide range circles
@@ -19,13 +21,29 @@ An interactive web-based tool for visualizing glider range based on altitude, gl
 
 You can try the live application at: [https://dssherrill.github.io/GlideRange.html](https://dssherrill.github.io/GlideRange.html)
 
+## Available Versions
+
+This repository contains two versions of the Glide Range Map application:
+
+### 1. JavaScript/HTML Version (Original)
+A single-page web application that runs entirely in the browser with no server required.
+- **Use this if:** You want a simple, standalone HTML file or need to deploy to GitHub Pages
+- **Files:** `GlideRange.html`, `glideRange.js`
+- **See instructions below** for local usage
+
+### 2. Python Dash Bootstrap Version (New!)
+A modern Python web application with server-side processing and Bootstrap UI.
+- **Use this if:** You prefer Python, want server-side control, or need to integrate with Python tooling
+- **Files:** `app.py`, `requirements.txt`
+- **See [README_PYTHON.md](README_PYTHON.md)** for detailed instructions
+
 ## Usage
 
 ### Online Usage
 
 Simply visit the [live application](https://dssherrill.github.io/GlideRange.html) in your web browser.
 
-### Local Usage
+### Local Usage - JavaScript/HTML Version
 
 1. Clone this repository:
    ```bash
@@ -44,9 +62,23 @@ Simply visit the [live application](https://dssherrill.github.io/GlideRange.html
 
 5. The map will display circles showing your glide range to each landing site
 
+### Local Usage - Python Dash Version
+
+See [README_PYTHON.md](README_PYTHON.md) for complete instructions. Quick start:
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+python app.py
+
+# Open http://localhost:8050 in your browser
+```
+
 ## Configuration
 
-### Mapbox API Token
+### JavaScript/HTML Version - Mapbox API Token
 
 The application uses Mapbox for map tiles. The API access token is stored in `glideRange.js` in the **MAPBOX CONFIGURATION** section.
 
@@ -65,15 +97,20 @@ GlideMap/
 ├── .github/
 │   └── workflows/
 │       └── deploy-to-github-pages.yml               # GitHub Actions deployment workflow
-├── GlideRange.html                                  # Main HTML application file
-├── glideRange.js                                    # Core JavaScript logic
-├── jquery.csv.js                                    # CSV parsing library for CUP files
-├── Sterling, Massachusetts 2021 SeeYou.cup          # Sample CUP file (note: filename contains spaces)
+├── GlideRange.html                                  # Main HTML application file (JS version)
+├── glideRange.js                                    # Core JavaScript logic (JS version)
+├── jquery.csv.js                                    # CSV parsing library for CUP files (JS version)
+├── app.py                                           # Main application file (Python version)
+├── requirements.txt                                 # Python dependencies (Python version)
+├── test_app.py                                      # Tests for Python version
+├── Sterling, Massachusetts 2021 SeeYou.cup          # Sample CUP file
 ├── LICENSE                                          # GNU GPL v3 License
 ├── SECURITY_IMPROVEMENTS.md                         # Documentation of security enhancements
 ├── DEPLOYMENT.md                                    # Deployment guide and instructions
 ├── CONFIGURATION.md                                 # Configuration guide (Mapbox token, settings)
-└── README.md                                        # This file
+├── README.md                                        # This file (main documentation)
+├── README_PYTHON.md                                 # Python version documentation
+└── .gitignore                                       # Git ignore file
 ```
 
 ## CUP File Format
