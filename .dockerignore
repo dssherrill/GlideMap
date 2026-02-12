@@ -1,0 +1,41 @@
+# Git
+.git
+.github
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Tests
+test_*.py
+tests/
+
+# Documentation (not needed in container)
+*.md
+!README_PYTHON.md
+CONFIGURATION.md
+DEPLOYMENT.md
+SECURITY_IMPROVEMENTS.md
+
+# Original JS version (not needed in Python container)
+GlideRange.html
+glideRange.js
+jquery.csv.js
+
+# OS
+.DS_Store
+Thumbs.db
