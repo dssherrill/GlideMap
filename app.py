@@ -52,16 +52,6 @@ AIRPORT = 5
 # Default CUP file path
 DEFAULT_CUP_FILE_PATH = 'Sterling, Massachusetts 2021 SeeYou.cup'
 
-# Zoom level calculation constants
-# Maps coordinate difference (degrees) to appropriate zoom level
-ZOOM_LEVEL_10_DEG = 6   # > 10 degrees difference
-ZOOM_LEVEL_5_DEG = 7    # > 5 degrees difference
-ZOOM_LEVEL_2_DEG = 8    # > 2 degrees difference
-ZOOM_LEVEL_1_DEG = 9    # > 1 degree difference
-ZOOM_LEVEL_0_5_DEG = 10 # > 0.5 degrees difference
-ZOOM_LEVEL_0_2_DEG = 11 # > 0.2 degrees difference
-ZOOM_LEVEL_DEFAULT = 12 # <= 0.2 degrees difference
-
 
 def feet_to_meters(feet):
     """Convert feet to meters"""
@@ -193,11 +183,12 @@ def load_default_cup_file():
 
 def calculate_map_bounds(landing_spots):
     """
-    Calculate map center and zoom level from landing spots
-    Returns (center, zoom) tuple
+    Calculate map bounds from landing spots
+    Returns [[min_lat, min_lon], [max_lat, max_lon]] for use with Dash Leaflet bounds property
     """
     if not landing_spots:
-        return default_center, 9
+        # Return None to indicate no bounds (will use default center/zoom)
+        return None
     
     # Find min/max coordinates
     lats = [spot['lat'] for spot in landing_spots]
@@ -206,34 +197,17 @@ def calculate_map_bounds(landing_spots):
     min_lat, max_lat = min(lats), max(lats)
     min_lon, max_lon = min(lons), max(lons)
     
-    # Calculate center
-    center_lat = (min_lat + max_lat) / 2
-    center_lon = (min_lon + max_lon) / 2
-    center = [center_lat, center_lon]
+    # Return bounds in Leaflet format: [[south, west], [north, east]]
+    # Add small padding (1% of range) to avoid markers on edge
+    lat_padding = (max_lat - min_lat) * 0.01 or 0.01
+    lon_padding = (max_lon - min_lon) * 0.01 or 0.01
     
-    # Calculate appropriate zoom level based on bounds
-    # This is a simplified calculation - Leaflet's fitBounds is more sophisticated
-    lat_diff = max_lat - min_lat
-    lon_diff = max_lon - min_lon
-    max_diff = max(lat_diff, lon_diff)
+    bounds = [
+        [min_lat - lat_padding, min_lon - lon_padding],  # Southwest corner
+        [max_lat + lat_padding, max_lon + lon_padding]   # Northeast corner
+    ]
     
-    # Map coordinate difference to zoom level
-    if max_diff > 10:
-        zoom = ZOOM_LEVEL_10_DEG
-    elif max_diff > 5:
-        zoom = ZOOM_LEVEL_5_DEG
-    elif max_diff > 2:
-        zoom = ZOOM_LEVEL_2_DEG
-    elif max_diff > 1:
-        zoom = ZOOM_LEVEL_1_DEG
-    elif max_diff > 0.5:
-        zoom = ZOOM_LEVEL_0_5_DEG
-    elif max_diff > 0.2:
-        zoom = ZOOM_LEVEL_0_2_DEG
-    else:
-        zoom = ZOOM_LEVEL_DEFAULT
-    
-    return center, zoom
+    return bounds
 
 
 # Initialize the Dash app with Bootstrap theme
@@ -346,6 +320,7 @@ app.layout = dbc.Container([
                         id="map",
                         center=default_center,
                         zoom=9,
+                        bounds=None,  # Will be updated when CUP data loads
                         style={'width': '100%', 'height': '600px'},
                         children=[
                             dl.TileLayer(
@@ -405,8 +380,7 @@ def load_cup_file(contents, filename):
 
 @callback(
     [Output('landing-spots-layer', 'children'),
-     Output('map', 'center'),
-     Output('map', 'zoom')],
+     Output('map', 'bounds')],
     [Input('landing-spots-store', 'data'),
      Input('glide-ratio', 'value'),
      Input('altitude', 'value'),
@@ -415,7 +389,7 @@ def load_cup_file(contents, filename):
 def update_map(landing_spots, glide_ratio, altitude, arrival_height):
     """Update map with landing spots and glide range circles"""
     if not landing_spots:
-        return [], no_update, no_update
+        return [], no_update
     
     # Validate inputs
     glide_ratio = max(GLIDE_RATIO_MIN, min(GLIDE_RATIO_MAX, glide_ratio or GLIDE_RATIO_DEFAULT))
@@ -473,12 +447,12 @@ def update_map(landing_spots, glide_ratio, altitude, arrival_height):
     # Recenter map only when landing spots change (not when parameters change)
     triggered_id = ctx.triggered_id if ctx.triggered_id else None
     if triggered_id == 'landing-spots-store':
-        # Calculate new center and zoom based on landing spots
-        center, zoom = calculate_map_bounds(landing_spots)
-        return markers, center, zoom
+        # Calculate new bounds based on landing spots
+        bounds = calculate_map_bounds(landing_spots)
+        return markers, bounds
     else:
-        # Don't update center/zoom when only parameters change
-        return markers, no_update, no_update
+        # Don't update bounds when only parameters change
+        return markers, no_update
 
 
 if __name__ == '__main__':

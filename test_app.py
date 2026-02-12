@@ -62,11 +62,14 @@ print(f"✓ Default CUP file loading works: loaded {len(spots)} spots")
 
 # Test map bounds calculation
 print("\nTesting map bounds calculation...")
-center, zoom = calculate_map_bounds(spots)
-assert isinstance(center, list) and len(center) == 2, "Center should be [lat, lon]"
-assert isinstance(zoom, int), "Zoom should be an integer"
-assert 1 <= zoom <= 18, f"Zoom should be between 1 and 18, got {zoom}"
-print(f"✓ Map bounds calculation works: center={center}, zoom={zoom}")
+bounds = calculate_map_bounds(spots)
+assert bounds is not None, "Bounds should not be None for valid spots"
+assert isinstance(bounds, list) and len(bounds) == 2, "Bounds should be [[sw], [ne]]"
+assert len(bounds[0]) == 2 and len(bounds[1]) == 2, "Each corner should have [lat, lon]"
+# Verify bounds format: [[min_lat, min_lon], [max_lat, max_lon]]
+assert bounds[0][0] < bounds[1][0], "South lat should be less than north lat"
+assert bounds[0][1] < bounds[1][1], "West lon should be less than east lon"
+print(f"✓ Map bounds calculation works: SW={bounds[0]}, NE={bounds[1]}")
 
 # Test app structure
 print("\nTesting app structure...")
