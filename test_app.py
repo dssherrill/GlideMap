@@ -1,0 +1,62 @@
+"""
+Test script for the Glide Range Map Dash application
+"""
+
+import sys
+import os
+
+# Test imports
+print("Testing imports...")
+try:
+    from app import (
+        feet_to_meters, 
+        meters_to_feet, 
+        calculate_radius,
+        parse_cup_coordinate,
+        parse_cup_elevation
+    )
+    print("✓ All imports successful")
+except Exception as e:
+    print(f"✗ Import error: {e}")
+    sys.exit(1)
+
+# Test conversion functions
+print("\nTesting conversion functions...")
+assert abs(feet_to_meters(1000) - 304.8) < 0.1, "feet_to_meters failed"
+assert abs(meters_to_feet(304.8) - 1000) < 0.1, "meters_to_feet failed"
+print("✓ Conversion functions work correctly")
+
+# Test coordinate parsing
+print("\nTesting coordinate parsing...")
+lat = parse_cup_coordinate("5107.830N", is_longitude=False)
+assert abs(lat - 51.1305) < 0.001, f"Latitude parsing failed: got {lat}"
+lon = parse_cup_coordinate("01410.467E", is_longitude=True)
+assert abs(lon - 14.1744) < 0.001, f"Longitude parsing failed: got {lon}"
+print(f"✓ Coordinate parsing works: lat={lat:.4f}, lon={lon:.4f}")
+
+# Test elevation parsing
+print("\nTesting elevation parsing...")
+elev_ft = parse_cup_elevation("1234ft")
+assert elev_ft == 1234, f"Feet parsing failed: got {elev_ft}"
+elev_m = parse_cup_elevation("100m")
+assert abs(elev_m - 328.08) < 0.1, f"Meters parsing failed: got {elev_m}"
+print(f"✓ Elevation parsing works: {elev_ft}ft, {elev_m:.1f}ft")
+
+# Test radius calculation
+print("\nTesting radius calculation...")
+radius = calculate_radius(20, 3500, 1000, 500)
+expected = feet_to_meters(20 * (3500 - 1000 - 500))
+assert abs(radius - expected) < 0.1, f"Radius calculation failed: got {radius}, expected {expected}"
+print(f"✓ Radius calculation works: {radius:.1f}m ({radius/1000:.1f}km)")
+
+# Test app structure
+print("\nTesting app structure...")
+from app import app
+assert app is not None, "App not initialized"
+assert hasattr(app, 'layout'), "App has no layout"
+print("✓ App structure is valid")
+
+print("\n✅ All tests passed!")
+print("\nTo run the application:")
+print("  python app.py")
+print("\nThen open http://localhost:8050 in your browser")
