@@ -6,6 +6,7 @@ __pycache__/
 .Python
 env/
 venv/
+venv_*/
 ENV/
 build/
 develop-eggs/
@@ -26,6 +27,7 @@ wheels/
 # Virtual environments
 .venv/
 venv/
+venv_*/
 
 # IDE
 .vscode/
