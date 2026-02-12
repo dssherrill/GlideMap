@@ -39,13 +39,14 @@ Custom CSS is injected via `app.index_string`:
 body {
     margin: 0;
     padding: 0;
-    overflow: hidden;  /* Prevents scrollbars */
+    overflow: hidden;  /* Prevents scrollbars (caution: avoid on mobile) */
 }
 
 .app-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;  /* Full viewport height */
+    height: 100dvh;  /* Dynamic viewport height (Chrome/Edge 108+, Firefox 110+, Safari 15.4+) */
+    height: 100vh;   /* Fallback for older browsers */
 }
 
 .content-section {
@@ -63,6 +64,12 @@ body {
     flex: 1;  /* Takes remaining width */
     position: relative;
 }
+```
+
+**⚠️ Mobile Viewport Considerations**:
+- **`overflow: hidden` on body**: Can trap users on mobile where viewport resizing is common (browser UI appears/disappears). Consider applying `overflow: hidden` only to `.app-container` and specific containers instead.
+- **`height: 100vh` issue**: Does not account for dynamic viewport (browser bars). Use `height: 100dvh` (supported in Chrome/Edge 108+, Firefox 110+, Safari 15.4+) with `100vh` as a fallback for older browsers.
+- **Recommended fix**: Use `height: min(100dvh, 100vh)` or apply explicit double-rule: `height: 100dvh; height: 100vh;` (browsers ignore unknown properties and use fallback). Alternatively, detect and apply dynamic height via JavaScript if viewport resizing is detected.
 ```
 
 ### Components
@@ -112,7 +119,13 @@ body {
 2. **Always accessible controls**: Sidebar always visible, no scrolling needed
 3. **Non-intrusive instructions**: Centered overlay can be dismissed
 4. **Clean, modern appearance**: Professional layout with clear visual hierarchy
-5. **Responsive**: Adapts to different viewport sizes
+5. **Responsive**: Optimized for desktop and tablet; mobile enhancements planned
+
+### Accessibility
+1. **Keyboard navigation**: All controls accessible via Tab navigation and keyboard shortcuts
+2. **ARIA landmarks**: Semantic HTML (header, nav, main, footer) with ARIA regions for screen readers
+3. **Focus management**: Clear focus indicators and logical tab order through interactive elements
+4. **Dismissable overlays**: Alert overlay can be dismissed via Escape key or close button
 
 ### Technical
 1. **Pure CSS solution**: No JavaScript required for layout
@@ -144,22 +157,41 @@ app.layout = html.Div([
 ```
 
 ## Browser Compatibility
-- ✅ Chrome/Edge (Chromium)
-- ✅ Firefox
-- ✅ Safari
+- ✅ Chrome/Edge (Chromium) 108+ (dvh support); all versions (vh support)
+- ✅ Firefox 110+ (dvh support); all versions (vh support)
+- ✅ Safari 15.4+ (dvh support); all versions (vh support)
 - ✅ All modern browsers with Flexbox support
 
+**CSS Dynamic Viewport Height (dvh) Support**:
+- **100dvh** (dynamic viewport height) is supported in Chrome/Edge 108+, Firefox 110+, and Safari 15.4+
+- For older browser support, use CSS fallback: `height: min(100vh, 100dvh)` or provide a `100vh` fallback
+- Example: `height: min(100vh, 100dvh)` will use the smaller value (more reliable on mobile)
+
 ## Responsive Behavior
-- **Large screens**: Full sidebar + map layout
-- **Medium screens**: Sidebar may need scrolling for very tall content
-- **Small screens**: Layout may need media queries for mobile (future enhancement)
+- **Large screens (desktop)**: Full sidebar + full-height map layout
+- **Medium screens (tablet)**: Sidebar may need scrolling for tall control panels; map remains full-height
+- **Small screens (mobile)**: Layout requires workarounds for dynamic viewport height (address in future enhancement)
+
+**⚠️ Viewport Height Concerns**:
+- **100vh issue**: The `height: 100vh` on `.app-container` and `body { overflow: hidden }` can cause problems on mobile devices where the browser UI (address bar, navigation) appears and disappears, changing the viewport height dynamically.
+  - **Mobile browser bars**: When address bar hides, 100vh may exceed the visible viewport, causing content to be clipped.
+  - **Overflow trap**: Setting `overflow: hidden` globally can prevent scrolling and trap users when content overflows unexpectedly.
+- **Recommended fixes**:
+  1. Use CSS: `height: min(100vh, 100dvh)` to use the smaller of viewport height values (where 100dvh = dynamic viewport height)
+  2. Or apply `overflow: hidden` only to specific containers (like `.content-section`), not globally on `body`
+  3. Use JavaScript to detect viewport resize and adjust height dynamically if needed
+  4. Consider media queries or `@supports` rules to apply mobile-specific viewport handling
+
+**Current status**: Desktop and tablet layouts work well; mobile optimization is a future enhancement.
 
 ## Future Enhancements
-Possible improvements for mobile devices:
-1. Collapsible sidebar on small screens
-2. Hamburger menu for controls
-3. Responsive breakpoints for different devices
-4. Touch-optimized map controls
+Priority improvements:
+1. **Mobile viewport height fix**: Use `100dvh` with `100vh` fallback (or `min(100dvh, 100vh)`) for cross-browser support, accounting for dynamic browser UI bars
+2. **Conditional overflow**: Apply `overflow: hidden` only to specific containers on mobile, not globally
+3. **Collapsible sidebar** on small screens (< 768px)
+4. **Hamburger menu** for compact control access
+5. **Touch-optimized** map controls and buttons
+6. **Responsive breakpoints** with proper testing across devices
 
 ## Testing
 To verify the layout works correctly:

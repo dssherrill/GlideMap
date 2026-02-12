@@ -10,27 +10,54 @@
 
 **Expected**: Map should recenter to Florida to show the new landing spots.
 
+## Why This Happens
+
+When a user interacts with a Leaflet map (pan, zoom), Leaflet maintains that state. Simply updating the `center` and `zoom` properties doesn't always override this user interaction state. This is by design in Leaflet to prevent programmatic changes from disrupting user navigation.
+
+However, the implemented solution shows that selective trigger-based updating (only recenter on data changes, not on every callback) is reliable and acceptable.
+
 ## Why Previous Attempts Failed
 
-### Attempt 1: Update center/zoom props directly (without trigger detection)
+### Attempt 1: Update center/zoom props directly (every callback)
 ```python
 return markers, center, zoom
 ```
 **Result**: Leaflet may ignore prop updates after user interaction if they are sent on every callback.
 
-### Attempt 2: Use viewport property
+### Attempt 2: Using viewport property with flyTo
 ```python
-viewport = {'center': center, 'zoom': zoom, 'transition': 'flyTo'}
+viewport = {'center': [lat, lon], 'zoom': zoom, 'transition': 'flyTo'}
 ```
-**Result**: JavaScript error - breaks the map entirely.
+**Result**: JavaScript error "can't access property 'transition', e is null" — breaks the map entirely.
+
+### Attempt 3: Using viewport with timestamp
+```python
+viewport = {'center': [lat, lon], 'zoom': zoom, '_timestamp': time.time()}
+```
+**Result**: JavaScript error, breaks map loading.
+
+### Attempt 4: Direct center/zoom without trigger detection
+```python
+return markers, center, zoom  # sent on every callback
+```
+**Result**: Map loads correctly, circles update, but view doesn't recenter after user interaction because Leaflet receives updates on every trigger, including parameter changes.
 
 ## The Working Solution
 
-**Key Insight**: Use `Output('map', 'center')` and `Output('map', 'zoom')` alongside `Output('map', 'children')`, but only send center/zoom updates when landing spot data changes — not when the user adjusts glide parameters.
+**Key Insight**: Use `Output('map', 'center')` and `Output('map', 'zoom')` alongside `Output('map', 'children')`, but **only send center/zoom updates when landing spot data changes** — not when the user adjusts glide parameters or toggles layers. This selective trigger-based approach is reliable and respects user interactions.
+
+The callback system works perfectly:
+1. User uploads a new CUP file
+2. Store updates with new landing spots data
+3. Callback fires with `ctx.triggered_id = 'landing-spots-store'`
+4. All circles update correctly (rebuilt with new data)
+5. Center and zoom are calculated from bounds of new landing spots
+6. Map receives new center/zoom values **only on data change**, not on every update
+7. Map recenters to show the new data
 
 ### Implementation
 
-The callback returns three outputs:
+The callback detects the trigger and conditionally returns center/zoom updates:
 ```python
 @callback(
     [Output('map', 'children'),
@@ -122,4 +149,10 @@ python app.py
 
 ## Conclusion
 
-This solution uses Dash Leaflet's `center` and `zoom` properties as callback outputs, selectively updating them only when new landing spot data is loaded. This provides reliable recentering without DOM remounting overhead, keeping the implementation simple and maintainable.
+This solution uses Dash Leaflet's `center` and `zoom` properties as callback outputs, selectively updating them only when new landing spot data is loaded via `ctx.triggered_id` detection. This provides reliable recentering without DOM remounting overhead, while preserving user interactions when only glide parameters change. The implementation is simple, maintainable, and avoids JavaScript errors.
+
+## References
+
+- Dash Leaflet documentation: https://dash-leaflet.com
+- Dash Callbacks and Context: https://dash.plotly.com/basic-callbacks
+- Leaflet map state and interaction: https://leafletjs.com/reference.html#map-state

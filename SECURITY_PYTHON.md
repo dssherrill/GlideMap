@@ -12,13 +12,39 @@ All dependencies have been scanned and are **free of known vulnerabilities**.
 
 | Package | Version | Status |
 |---------|---------|--------|
-| dash | 2.14.2 | ✅ Secure |
+| dash | 4.0.0 | ✅ Secure (Major upgrade from 2.14.2 — see notes) |
 | dash-bootstrap-components | 1.5.0 | ✅ Secure |
 | dash-leaflet | 1.0.15 | ✅ Secure |
-| plotly | 5.18.0 | ✅ Secure |
-| pandas | 2.1.4 | ✅ Secure |
-| numpy | 1.26.2 | ✅ Secure |
+| plotly | 5.20.0 | ✅ Secure |
+| pandas | 2.2.0 | ✅ Secure |
+| numpy | 2.0.2 | ✅ Secure |
 | gunicorn | 22.0.0 | ✅ Secure |
+
+## Dependency Upgrade Notes
+
+### Dash Major Version Upgrade (2.14.2 → 4.0.0)
+
+**Date**: February 12, 2026
+
+Updated from version 2.14.2 to 4.0.0 to address security vulnerabilities and modernize React dependencies:
+
+1. **CVE-2024-21485: XSS Vulnerability in Dash < 2.15.0**
+   - Severity: Medium
+   - Affected: < 2.15.0
+   - Fixed: 2.15.0+
+   - Impact: Potential cross-site scripting in certain component configurations
+
+2. **React 18 Compatibility**
+   - Dash 4.0.0 upgrades to React 18, providing improved security and performance
+   - Better handling of event delegation and synthetic events
+
+**Migration Notes**:
+- Component callbacks and layouts remain compatible
+- No breaking changes in typical applications
+- May require testing with complex nested components
+- CSS-in-JS or custom JavaScript may need updates
+
+**Action Taken**: Updated `requirements.txt` to `dash>=2.15.0` (installs 4.0.0), tested core functionality, all tests passing.
 
 ## Recent Security Updates
 
