@@ -50,8 +50,10 @@ OUTLANDING = 3
 GLIDING_AIRFIELD = 4
 AIRPORT = 5
 
-# Default CUP file path
-DEFAULT_CUP_FILE_PATH = "strln35a.cup"
+# Resolve bundled assets relative to this module so deployment does not depend
+# on the process working directory.
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_CUP_FILE_PATH = os.path.join(APP_DIR, "strln35a.cup")
 
 
 def feet_to_meters(feet):
