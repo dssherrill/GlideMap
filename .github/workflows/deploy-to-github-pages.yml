@@ -18,12 +18,12 @@ jobs:
     
     steps:
       - name: Checkout GlideMap repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: glide-map
       
       - name: Checkout GitHub Pages repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: dssherrill/dssherrill.github.io
           token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
