@@ -546,6 +546,12 @@ app.layout = html.Div(
                                                     "Quick Guide",
                                                     className="d-block mb-2",
                                                 ),
+                                                html.P(
+                                                    html.Strong(
+                                                        "Range circles ignore blocking terrain."
+                                                    ),
+                                                    className="small mb-2",
+                                                ),
                                                 html.Ul(
                                                     [
                                                         html.Li(
@@ -566,10 +572,6 @@ app.layout = html.Div(
                                                 ),
                                                 html.P(
                                                     "Adjust parameters on the left.",
-                                                    className="small mb-0",
-                                                ),
-                                                html.P(
-                                                    "Range circles ignore blocking terrain.",
                                                     className="small mb-0",
                                                 ),
                                             ],
