@@ -418,7 +418,7 @@ app.layout = html.Div(
                                                     className="mb-3",
                                                 ),
                                                 dbc.Label(
-                                                    "Arrival Height (ft)",
+                                                    "Arrival Height AGL (ft)",
                                                     html_for="arrival-height",
                                                     className="mt-2",
                                                 ),
@@ -432,7 +432,7 @@ app.layout = html.Div(
                                                     className="mb-1",
                                                 ),
                                                 dbc.FormText(
-                                                    "Minimum safe arrival height",
+                                                    "Minimum safe arrival height above ground level",
                                                     className="mb-3",
                                                 ),
                                                 html.Hr(),
