@@ -19,6 +19,7 @@ RUN groupadd -g ${GID} appgroup && \
 # Copy application files
 COPY app.py .
 COPY Sterling*.cup .
+COPY strln35a.cup .
 
 # Ensure the non-root user owns the workdir and all copied files
 RUN chown -R appuser:appgroup /app
